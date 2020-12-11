@@ -1,5 +1,5 @@
 var m = require("mithril")
-var Minfig = require("../../models/minifig/Minifig")
+var Minifig = require("../../models/minifig/Minifig")
 
 
 var CellContent = {
@@ -13,7 +13,6 @@ var CellContent = {
 }
 
 var state = {
-    list: [],
     cols: [
         {"name": "Figuren-Nr.", "property": "minifig.fig_num"},
         {"name": "Figuren-Name", "property": "minifig.name"},
@@ -22,12 +21,12 @@ var state = {
         {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/minifig/' + row.fig_id}, "Details"))},
     ],
     renderHeaders: () => m("thead", m("tr", state.cols.map(col => m("th", col.name)))),
-    renderBody: () => m("tbody", state.list ? state.list.map(row => m("tr", state.cols.map(col => m(CellContent, {col: col, row: row})))) : ""),
-    renderFooter: () => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": state.cols.length}, "Anzahl Minifiguren: " + state.list.length)))
+    renderBody: () => m("tbody", Minifig.list ? Minifig.list.map(row => m("tr", state.cols.map(col => m(CellContent, {col: col, row: row})))) : ""),
+    renderFooter: () => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": state.cols.length}, "Anzahl Minifiguren: " + Minifig.list.length)))
 }
 
 var MinifigList =  {
-    oninit: (vnode) => vnode.attrs.inventory_id ? Minfig.getMinifigsByInventoryId(vnode.attrs.inventory_id).then(res => state.list = res.objects) : state.list = [],
+    oninit: (vnode) => Minifig.getMinifigsByInventoryId(vnode.attrs.inventory_id),
     view: () => m("table", {class: "ui striped celled table", style: "margin-top: 15px"}, [
         state.renderHeaders(),
         state.renderBody(),

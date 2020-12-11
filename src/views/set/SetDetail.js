@@ -13,7 +13,6 @@ var PropertyList = {
 var MinifigListElement = {
     view: function(vnode) {
         if (vnode.attrs.inventories) {
-            console.log(vnode.attrs.inventories)
             return m(MinifigList, {"inventory_id": vnode.attrs.inventories.filter(inv => inv.is_latest).map(inv => inv.id)[0]})
         }
     }
@@ -21,7 +20,6 @@ var MinifigListElement = {
 
 
 var state = {
-    actualSet: {},
     cols: [
         {"name": "Set-Nr.", "property": "set_num"},
         {"name": "Set-Name", "property": "name"},
@@ -35,17 +33,17 @@ var state = {
 
 
 var SetDetail =  {
-    oninit: (vnode) => {state.actualSet = {}; Set.getSetById(vnode.attrs.id).then(res => state.actualSet = res)},
+    oninit: (vnode) => {Set.actualSet = {}; Set.getSetById(vnode.attrs.id)},
     view: () => m("div", {class: "ui two column grid"}, [
-        m("div", {class: "twelve wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui celled list"}, m(PropertyList, {"data": state.actualSet})))),
-        m("div", {class: "four wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, [
+        m("div", {class: "twelve wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui celled list"}, m(PropertyList, {"data": Set.actualSet})))),
+        m("div", {class: "four wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, Set.actualSet.set_num ? [
             m("div", {class: "ui slide masked reveal image" }, [
-                m("img", {class: "visible content", src: 'https://img.bricklink.com/ItemImage/SN/0/' + state.actualSet.set_num + '.png'}),
-                m("img", {class: "hidden content", src: 'https://img.bricklink.com/ItemImage/ON/0/' + state.actualSet.set_num + '.png'}),
+                m("img", {class: "visible content", src: 'https://img.bricklink.com/ItemImage/ON/0/' + Set.actualSet.set_num + '.png'}),
+                m("img", {class: "hidden content", src: 'https://img.bricklink.com/ItemImage/SN/0/' + Set.actualSet.set_num + '.png'}),
             ]),
-            m("div", {class: "ui slide masked reveal image" }, m("div", {class: "extra content"}, "2 Images"))
-        ])),
-        m("div", {class: "sixteen wide column"}, m(MinifigListElement, {"inventories": state.actualSet.inventories})),
+            m("div", {class: "ui slide masked reveal image" }, m("div", {class: "extra content"}, "2 Bilder"))
+        ] : [])),
+        m("div", {class: "sixteen wide column"}, m(MinifigListElement, {"inventories": Set.actualSet.inventories})),
         m(m.route.Link, {selector: "button", class: "mini ui primary button", href: '/sets'}, "Zurück")
     ])
 }
