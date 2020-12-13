@@ -1,16 +1,7 @@
 var m = require("mithril")
 var Minifig = require("../../models/minifig/Minifig")
 
-
-var CellContent = {
-    view: function(vnode) {
-        if (vnode.attrs.col.element) {
-            return m("td", {"data-label": vnode.attrs.name}, vnode.attrs.col.element(vnode.attrs.row))
-        } else if (vnode.attrs.col.property) {
-            return m("td", {"data-label": vnode.attrs.col.name}, vnode.attrs.col.property.split('.').reduce((o, k) =>  o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.row))
-        }
-    }
-}
+var Table = require("../common/Table")
 
 var state = {
     cols: [
@@ -20,18 +11,26 @@ var state = {
         {"name": "Häufigkeit pro Set", "property": "quantity"},
         {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/minifig/' + row.fig_id}, "Details"))},
     ],
-    renderHeaders: () => m("thead", m("tr", state.cols.map(col => m("th", col.name)))),
-    renderBody: () => m("tbody", Minifig.list ? Minifig.list.map(row => m("tr", state.cols.map(col => m(CellContent, {col: col, row: row})))) : ""),
-    renderFooter: () => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": state.cols.length}, "Anzahl Minifiguren: " + Minifig.list.length)))
+    inventory_id: null
 }
 
 var MinifigList =  {
-    oninit: (vnode) => Minifig.getMinifigsByInventoryId(vnode.attrs.inventory_id),
-    view: () => m("table", {class: "ui striped celled table", style: "margin-top: 15px"}, [
-        state.renderHeaders(),
-        state.renderBody(),
-        state.renderFooter()
-    ])
+    oninit: (vnode) => {
+        if (vnode.attrs.inventory && vnode.attrs.inventory.id) {
+            state.inventory_id = vnode.attrs.inventory.id
+            Minifig.getMinifigsByInventoryId(state.inventory_id)
+        }
+    },
+    view: () => m(Object.assign({}, Table), {
+        "sortable": false,
+        "pageable": false,
+        "getList": () => Minifig.list,
+        "getNumResults": () => Minifig.numResults,
+        "fn": Minifig.getMinifigsByInventoryId,
+        "cols": state.cols,
+        "setPage": (page) => Minifig.page = page,
+        "getPage": () => Minifig.page
+    })
 }
 
 module.exports = MinifigList

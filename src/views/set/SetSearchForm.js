@@ -13,7 +13,8 @@ var state = {
     priceFrom: null,
     priceTo: null,
     setState: null,
-    setTheme: null
+    setTheme: null,
+    isClosed: false,
 }
 
 
@@ -89,7 +90,14 @@ var SetSearchForm =  {
         state.themes.sort((t1, t2) => t1.name.localeCompare(t2.name))
         state.themes.unshift({"name": "Alle", "id": null, "children": []})
     }),
-    view: () => m("form", {
+    view: () => m("div", {class: "ui accordion"}, [
+        m("div", {
+            class: "active title", onclick: () => {
+                state.isClosed = !state.isClosed
+                $('.ui.accordion').accordion(state.isClosed ? 'open' : 'close', 0)
+            }
+        }, m("i", {class: "dropdown icon"}), "Suche"),
+        m("div", {class: "active content"}, m("p", m("form", {
         class: "ui form",
         style: "margin-top: 15px",
         onsubmit: (e) => {e.preventDefault(); Set.queryParams["q"] = generateQuery(); Set.getSets()},
@@ -144,7 +152,7 @@ var SetSearchForm =  {
         ]),
         m("button", {class: "ui primary button", "type": "submit"}, "Suchen"),
         m("button", {class: "ui secondary button", "type": "reset"}, "Zurücksetzen")
-    ])
+    ])))])
 }
 
 module.exports = SetSearchForm

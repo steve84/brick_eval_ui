@@ -5,6 +5,7 @@ var baseUrl = "http://localhost:5000/api/"
 var Set = {
     list: [],
     numResults: 0,
+    totalPages: 0,
     page: 1,
     pageSize: 15,
     orderByField: "set_num",
@@ -28,6 +29,7 @@ var Set = {
             Set.list = res.objects
             Set.numResults = res.num_results
             Set.page = res.page
+            Set.totalPages = res.total_pages
         })
     },
     getSetById: 
