@@ -24,6 +24,7 @@ var MinifigList =  {
     view: () => m(Object.assign({}, Table), {
         "sortable": false,
         "pageable": false,
+        "isLoading": () => Minifig.loading,
         "getList": () => Minifig.list,
         "getNumResults": () => Minifig.numResults,
         "fn": Minifig.getMinifigsByInventoryId,

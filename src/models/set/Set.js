@@ -10,6 +10,7 @@ var Set = {
     pageSize: 15,
     orderByField: "set_num",
     orderByDirection: "asc",
+    loading: false,
     actualSet: {},
     queryParams: {},
     getSets: function() {
@@ -21,6 +22,7 @@ var Set = {
         Set.queryParams["q"]["order_by"] = [{"field": Set.orderByField, "direction": Set.orderByDirection}]
         tmpQueryParams = Object.assign({}, Set.queryParams);
         tmpQueryParams["q"] = JSON.stringify(Set.queryParams["q"])
+        Set.loading = true;
         return m.request({
             method: "GET",
             url: baseUrl + "sets",
@@ -30,10 +32,15 @@ var Set = {
             Set.numResults = res.num_results
             Set.page = res.page
             Set.totalPages = res.total_pages
+            Set.loading = false
         })
     },
     getSetById: 
-        id => m.request({method: "GET", url: baseUrl + "sets/" + id}).then(res => Set.actualSet = res)
+        id => {
+            Set.loading = true
+            Set.actualSet = {}
+            m.request({method: "GET", url: baseUrl + "sets/" + id}).then(res => Set.actualSet = res)
+        }
 }
 
 module.exports = Set

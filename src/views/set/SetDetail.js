@@ -28,6 +28,7 @@ var ScoreList = {
             return m(scoreTable, {
                 "sortable": false,
                 "pageable": false,
+                "isLoading": () => false,
                 "getList": () => vnode.attrs.scores,
                 "getNumResults": () => vnode.attrs.scores.length,
                 "cols": cols,

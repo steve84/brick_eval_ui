@@ -59,6 +59,7 @@ var PagingElement = {
 var state = {
     sortable: false,
     pageable: false,
+    isLoading: () => true,
     getList: () => {},
     cols: [],
     setPage: () => {},
@@ -82,6 +83,7 @@ var Table =  {
     oninit: (vnode) => {
         state.sortable = vnode.attrs.sortable
         state.pageable = vnode.attrs.pageable
+        state.isLoading = vnode.attrs.isLoading
         state.getList = vnode.attrs.getList
         state.getNumResults = vnode.attrs.getNumResults
         state.cols = vnode.attrs.cols
@@ -99,11 +101,13 @@ var Table =  {
         }
     },
     view: () => [
-        m("table", {class: "ui striped sortable celled table", style: "margin-top: 15px"}, [
-            state.renderHeaders(),
-            state.renderBody(),
-            state.renderFooter()
-        ])
+        m("div", {class: "ui segment", style: "border: none; box-shadow: none; padding: unset"}, [
+            m("div", {class: "ui " + (state.isLoading() ? "active" : "disabled") + " dimmer"}, m("div", {class: "ui " + (state.isLoading() ? "" : "disabled") + " text loader"}, "Lädt...")),
+            m("table", {class: "ui striped sortable celled table"}, [
+                state.renderHeaders(),
+                state.renderBody(),
+                state.renderFooter()
+            ])])
     ]
 }
 

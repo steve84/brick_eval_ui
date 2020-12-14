@@ -25,6 +25,7 @@ var SetList =  {
         m(Object.assign({}, Table), {
             "sortable": true,
             "pageable": true,
+            "isLoading": () => Set.loading,
             "getList": () => Set.list,
             "fn": Set.getSets,
             "cols": state.cols,
