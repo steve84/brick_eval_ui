@@ -14,17 +14,17 @@ var HeaderContent = {
     view: function(vnode) {
         var properties = {}
         if (vnode.attrs.sortable) {
-            if (vnode.attrs.col.property === state.getOrderByField().replace("__", ".")) {
-                properties["class"] = "sorted " + (state.getOrderByDirection() === "desc" ? "descending" : "ascending")
+            if (vnode.attrs.col.property === vnode.attrs.state.getOrderByField().replace("__", ".")) {
+                properties["class"] = "sorted " + (vnode.attrs.state.getOrderByDirection() === "desc" ? "descending" : "ascending")
             }
             properties["onclick"] = (e) => {
-                if (state.getOrderByField() === vnode.attrs.col.property.replace(".", "__")) {
-                    state.setOrderByDirection(state.getOrderByDirection() === "asc" ? "desc" : "asc")
+                if (vnode.attrs.state.getOrderByField() === vnode.attrs.col.property.replace(".", "__")) {
+                    vnode.attrs.state.setOrderByDirection(vnode.attrs.state.getOrderByDirection() === "asc" ? "desc" : "asc")
                 } else {
-                    state.setOrderByDirection("asc")
+                    vnode.attrs.state.setOrderByDirection("asc")
                 }
-                state.setOrderByField(vnode.attrs.col.property.replace(".", "__"))
-                state.fn()
+                vnode.attrs.state.setOrderByField(vnode.attrs.col.property.replace(".", "__"))
+                vnode.attrs.state.fn()
             }
         }
         return m("th", properties, vnode.attrs.col.name)
@@ -33,30 +33,51 @@ var HeaderContent = {
 
 
 var PagingElement = {
-    view: function() {
+    view: function(vnode) {
         return m("div", {class: "ui right floated pagination menu"}, [
             m("a", {class: "icon item", onclick: () => {
-                state.setPage(1)
-                state.fn()
+                vnode.attrs.state.setPage(1)
+                vnode.attrs.state.fn()
             }}, m("i", {class: "angle double left icon"})),
             m("a", {class: "icon item", onclick: () => {
-                state.setPage(state.getPage() - 1)
-                state.fn()
+                vnode.attrs.state.setPage(vnode.attrs.state.getPage() - 1)
+                vnode.attrs.state.fn()
             }}, m("i", {class: "angle left icon"})),
-            m("a", {class: "item"}, state.getPage() + " von " + state.getTotalPages()),
+            m("a", {class: "item"}, vnode.attrs.state.getPage() + " von " + vnode.attrs.state.getTotalPages()),
             m("a", {class: "icon item", onclick: () => {
-                state.setPage(state.getPage() + 1)
-                state.fn()
+                vnode.attrs.state.setPage(vnode.attrs.state.getPage() + 1)
+                vnode.attrs.state.fn()
             }}, m("i", {class: "angle right icon"})),
             m("a", {class: "icon item", onclick: () => {
-                state.setPage(state.getTotalPages())
-                state.fn()
+                vnode.attrs.state.setPage(vnode.attrs.state.getTotalPages())
+                vnode.attrs.state.fn()
             }}, m("i", {class: "angle double right icon"}))
         ])
     }
 }
 
-var state = {
+var Table =  {
+    oninit: (vnode) => {
+        vnode.state.sortable = vnode.attrs.sortable
+        vnode.state.pageable = vnode.attrs.pageable
+        vnode.state.isLoading = vnode.attrs.isLoading
+        vnode.state.getList = vnode.attrs.getList
+        vnode.state.getNumResults = vnode.attrs.getNumResults
+        vnode.state.cols = vnode.attrs.cols
+        vnode.state.fn = vnode.attrs.fn
+        vnode.state.rowStyle = vnode.attrs.rowStyle
+        if (vnode.state.pageable) {
+            vnode.state.setPage = vnode.attrs.setPage
+            vnode.state.getPage = vnode.attrs.getPage
+            vnode.state.getTotalPages = vnode.attrs.getTotalPages
+        }
+        if (vnode.state.sortable) {
+            vnode.state.getOrderByField = vnode.attrs.getOrderByField
+            vnode.state.setOrderByField = vnode.attrs.setOrderByField
+            vnode.state.getOrderByDirection = vnode.attrs.getOrderByDirection
+            vnode.state.setOrderByDirection = vnode.attrs.setOrderByDirection
+        }
+    },
     sortable: false,
     pageable: false,
     isLoading: () => true,
@@ -72,45 +93,21 @@ var state = {
     getNumResults: () => {},
     fn: () => {},
     rowStyle: () => {},
-    renderHeaders: () => m("thead", m("tr", state.cols.map(col => m(HeaderContent, {"sortable": state.sortable, "col": col})))),
-    renderBody: () => m("tbody", state.getList().map(row => m("tr", state.rowStyle ? state.rowStyle(row) : {}, state.cols.map(col => m(CellContent, {"col": col, "row": row}))))),
-    renderFooter: () => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": state.cols.length}, [
-        state.pageable ? m(PagingElement) :  null,
-        m("div", {class: "left floated"}, "Anzahl Einträge: " + state.getNumResults())
-    ])))
-}
-
-var Table =  {
-    oninit: (vnode) => {
-        state.sortable = vnode.attrs.sortable
-        state.pageable = vnode.attrs.pageable
-        state.isLoading = vnode.attrs.isLoading
-        state.getList = vnode.attrs.getList
-        state.getNumResults = vnode.attrs.getNumResults
-        state.cols = vnode.attrs.cols
-        state.fn = vnode.attrs.fn
-        state.rowStyle = vnode.attrs.rowStyle
-        if (state.pageable) {
-            state.setPage = vnode.attrs.setPage
-            state.getPage = vnode.attrs.getPage
-            state.getTotalPages = vnode.attrs.getTotalPages
-        }
-        if (state.sortable) {
-            state.getOrderByField = vnode.attrs.getOrderByField
-            state.setOrderByField = vnode.attrs.setOrderByField
-            state.getOrderByDirection = vnode.attrs.getOrderByDirection
-            state.setOrderByDirection = vnode.attrs.setOrderByDirection
-        }
-    },
-    view: () => [
+    renderHeaders: (vnode) => m("thead", m("tr", vnode.state.cols.map(col => m(HeaderContent, {"sortable": vnode.state.sortable, "col": col, "state": vnode.state})))),
+    renderBody: (vnode) => m("tbody", vnode.state.getList().map(row => m("tr", vnode.state.rowStyle ? vnode.state.rowStyle(row) : {}, vnode.state.cols.map(col => m(CellContent, {"col": col, "row": row}))))),
+    renderFooter: (vnode) => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": vnode.state.cols.length}, [
+        vnode.state.pageable ? m(PagingElement, {"state": vnode.state}) :  null,
+        m("div", {class: "left floated"}, "Anzahl Einträge: " + vnode.state.getNumResults())
+    ]))),
+    view: (vnode) => [
         m("div", {class: "ui segment", style: "border: none; box-shadow: none; padding: unset"}, [
-            m("div", {class: "ui " + (state.isLoading() ? "active" : "disabled") + " dimmer"}, m("div", {class: "ui " + (state.isLoading() ? "" : "disabled") + " text loader"}, "Lädt...")),
+            m("div", {class: "ui " + (vnode.state.isLoading() ? "active" : "disabled") + " dimmer"}, m("div", {class: "ui " + (vnode.state.isLoading() ? "" : "disabled") + " text loader"}, "Lädt...")),
             m("table", {class: "ui striped sortable celled table"}, [
-                state.renderHeaders(),
-                state.renderBody(),
-                state.renderFooter()
+                vnode.state.renderHeaders(vnode),
+                vnode.state.renderBody(vnode),
+                vnode.state.renderFooter(vnode)
             ])])
-    ]
+    ],
 }
 
 module.exports = Table

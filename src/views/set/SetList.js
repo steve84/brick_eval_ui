@@ -22,7 +22,7 @@ var SetList =  {
     oninit: Set.getSets,
     view: () => [
         m(SetSearchForm),
-        m(Object.assign({}, Table), {
+        m(Table, {
             "sortable": true,
             "pageable": true,
             "isLoading": () => Set.loading,
@@ -37,7 +37,7 @@ var SetList =  {
             "setOrderByField": (field) => Set.orderByField = field,
             "getOrderByDirection": () => Set.orderByDirection,
             "setOrderByDirection": (direction) => Set.orderByDirection = direction
-        })
+        }),
     ]
 }
 

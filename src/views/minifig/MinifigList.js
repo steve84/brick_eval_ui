@@ -21,16 +21,21 @@ var MinifigList =  {
             Minifig.getMinifigsByInventoryId(state.inventory_id)
         }
     },
-    view: () => m(Object.assign({}, Table), {
-        "sortable": false,
-        "pageable": false,
+    view: () => m(Table, {
+        "sortable": true,
+        "pageable": true,
         "isLoading": () => Minifig.loading,
         "getList": () => Minifig.list,
         "getNumResults": () => Minifig.numResults,
-        "fn": Minifig.getMinifigsByInventoryId,
+        "fn": () => Minifig.getMinifigsByInventoryId(state.inventory_id),
         "cols": state.cols,
         "setPage": (page) => Minifig.page = page,
-        "getPage": () => Minifig.page
+        "getPage": () => Minifig.page,
+        "getTotalPages": () => Minifig.totalPages,
+        "getOrderByField": () => Minifig.orderByField,
+        "setOrderByField": (field) => Minifig.orderByField = field,
+        "getOrderByDirection": () => Minifig.orderByDirection,
+        "setOrderByDirection": (direction) => Minifig.orderByDirection = direction
     })
 }
 

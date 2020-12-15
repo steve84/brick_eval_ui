@@ -11,7 +11,7 @@ var InventoryPartList = require("../inventory_part/InventoryPartList")
 var PropertyList = {
     view: function(vnode) {
         if (vnode.attrs.data && vnode.attrs.data.set) {
-            return m("tbody", state.cols.map(col => m("tr", [
+            return m("tbody", SetDetail.cols.map(col => m("tr", [
                 m("td", {class: "two wide column"},  col.name), 
                 m("td", col.fn ? col.fn(vnode.attrs.data.set[col.property]) : col.property.split('.').reduce((o, k) => o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.data.set))
             ])))
@@ -55,19 +55,6 @@ var ImageElement = {
 }
 
 
-var state = {
-    cols: [
-        {"name": "Set-Nr.", "property": "set_num"},
-        {"name": "Set-Name", "property": "name"},
-        {"name": "Anzahl Teile", "property": "num_parts"},
-        {"name": "Jahr", "property": "year_of_publication"},
-        {"name": "Thema", "property": "theme_id", "fn": (id) => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
-        {"name": "Verkaufspreis", "property": "retail_price", "fn": val => val ? (val / 100).toFixed(2) : ""},
-        {"name": "EOL", "property": "eol"},
-    ]
-}
-
-
 var SetDetail =  {
     oninit: (vnode) => {
         if (Theme.dropdownList.length == 0) {
@@ -82,7 +69,16 @@ var SetDetail =  {
         m("div", {class: "sixteen wide column"}, m(ScoreList, {"scores": Inventory.actualInventory.scores})),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(InventoryPartList, {"inventory": Inventory.actualInventory}) : m("div")),
         m(m.route.Link, {selector: "button", class: "mini ui primary button", href: '/sets'}, "Zurück")
-    ])
+    ]),
+    cols: [
+        {"name": "Set-Nr.", "property": "set_num"},
+        {"name": "Set-Name", "property": "name"},
+        {"name": "Anzahl Teile", "property": "num_parts"},
+        {"name": "Jahr", "property": "year_of_publication"},
+        {"name": "Thema", "property": "theme_id", "fn": (id) => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
+        {"name": "Verkaufspreis", "property": "retail_price", "fn": val => val ? (val / 100).toFixed(2) : ""},
+        {"name": "EOL", "property": "eol"},
+    ]
 }
 
 module.exports = SetDetail

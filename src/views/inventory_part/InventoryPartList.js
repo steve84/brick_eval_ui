@@ -27,7 +27,7 @@ var InventoryPartList =  {
         }
     },
     view: () => [
-        m(Object.assign({}, Table), {
+        m(Table, {
             "sortable": true,
             "pageable": true,
             "isLoading": () => InventoryPart.loading,
