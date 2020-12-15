@@ -1,5 +1,6 @@
 var m = require("mithril")
 var Inventory = require("../../models/inventory/Inventory")
+var Theme = require("../../models/theme/Theme")
 
 var Table = require("../common/Table")
 var MinifigList = require("../minifig/MinifigList")
@@ -11,7 +12,7 @@ var PropertyList = {
         if (vnode.attrs.data && vnode.attrs.data.set) {
             return m("tbody", state.cols.map(col => m("tr", [
                 m("td", {class: "two wide column"},  col.name), 
-                m("td", col.property.split('.').reduce((o, k) => o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.data.set))
+                m("td", col.fn ? col.fn(vnode.attrs.data.set[col.property]) : col.property.split('.').reduce((o, k) => o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.data.set))
             ])))
         }
     }
@@ -20,7 +21,7 @@ var PropertyList = {
 var ScoreList = {
     view: function(vnode) {
         var cols = [
-            {"name": "Bewertung", "property": "score"},
+            {"name": "Bewertung", "property": "score", "fn": (val) => val.toFixed(4)},
             {"name": "Berechnungsdatum", "property": "calc_date"},
         ]
         if (vnode.attrs.scores) {
@@ -59,15 +60,20 @@ var state = {
         {"name": "Set-Name", "property": "name"},
         {"name": "Anzahl Teile", "property": "num_parts"},
         {"name": "Jahr", "property": "year_of_publication"},
-        {"name": "Thema", "property": "theme.name"},
-        {"name": "Verkaufspreis", "property": "retail_price"},
+        {"name": "Thema", "property": "theme_id", "fn": (id) => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
+        {"name": "Verkaufspreis", "property": "retail_price", "fn": (val) => (val / 100).toFixed(2)},
         {"name": "EOL", "property": "eol"},
     ]
 }
 
 
 var SetDetail =  {
-    oninit: (vnode) => {Inventory.actualInventory = {}; Inventory.getInventoryBySetId(vnode.attrs.id)},
+    oninit: (vnode) => {
+        if (Theme.dropdownList.length == 0) {
+            Theme.getThemeHierarchy()
+        }
+        Inventory.actualInventory = {};
+        Inventory.getInventoryBySetId(vnode.attrs.key)},
     view: () => m("div", {class: "ui two column grid"}, [
         m("div", {class: "twelve wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"data": Inventory.actualInventory})))),
         m("div", {class: "four wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory}))),

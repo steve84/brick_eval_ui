@@ -85,11 +85,7 @@ var generateQuery = () => {
 
 
 var SetSearchForm =  {
-    oninit: () => Theme.getThemeHierarchy().then(res => {
-        state.themes = res
-        state.themes.sort((t1, t2) => t1.name.localeCompare(t2.name))
-        state.themes.unshift({"name": "Alle", "id": null, "children": []})
-    }),
+    oninit: Theme.getThemeHierarchy,
     view: () => m("div", {class: "ui accordion"}, [
         m("div", {
             class: "active title", onclick: () => {
@@ -100,8 +96,8 @@ var SetSearchForm =  {
         m("div", {class: "active content"}, m("p", m("form", {
         class: "ui form",
         style: "margin-top: 15px",
-        onsubmit: (e) => {e.preventDefault(); Set.queryParams["q"] = generateQuery(); Set.getSets()},
-        onreset: (e) => {resetForm(); Set.getSets()}
+        onsubmit: (e) => {e.preventDefault(); Set.page = 1; Set.queryParams["q"] = generateQuery(); Set.getSets()},
+        onreset: (e) => {resetForm(); Set.page = 1; Set.getSets()}
     },
     [
         m("div", {class: "two fields"}, [
@@ -147,7 +143,7 @@ var SetSearchForm =  {
             ]),
             m("div", {class: "field"}, [
                 m("label", "Thema:"),
-                m("select", {class: "ui search dropdown", "name": "theme", "value": state.setTheme, oninput: (e) => state.setTheme = e.target.value}, state.themes.map(t => m("option", {"value": getAllChildIdsFromTheme(t)}, t.name)))
+                m("select", {class: "ui search dropdown", "name": "theme", "value": state.setTheme ? state.setTheme.id : null, oninput: (e) => state.setTheme = e.target.value}, Theme.dropdownList.map(t => m("option", {"value": getAllChildIdsFromTheme(t)}, t.name)))
             ]),
         ]),
         m("button", {class: "ui primary button", "type": "submit"}, "Suchen"),

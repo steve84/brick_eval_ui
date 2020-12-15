@@ -5,7 +5,7 @@ var CellContent = {
         if (vnode.attrs.col.element) {
             return m("td", {"data-label": vnode.attrs.name}, vnode.attrs.col.element(vnode.attrs.row))
         } else if (vnode.attrs.col.property) {
-            return m("td", {"data-label": vnode.attrs.col.name}, vnode.attrs.col.property.split('.').reduce((o, k) =>  o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.row))
+            return m("td", {"data-label": vnode.attrs.col.name}, vnode.attrs.col.fn ? vnode.attrs.col.fn(vnode.attrs.row[vnode.attrs.col.property]) : vnode.attrs.col.property.split('.').reduce((o, k) =>  o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.row))
         }
     }
 }

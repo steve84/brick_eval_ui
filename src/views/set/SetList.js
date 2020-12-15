@@ -12,7 +12,7 @@ var state = {
         {"name": "Anzahl Teile", "property": "num_parts"},
         {"name": "Jahr", "property": "year_of_publication"},
         {"name": "Thema", "property": "theme.name"},
-        {"name": "Verkaufspreis", "property": "retail_price"},
+        {"name": "Verkaufspreis", "property": "retail_price", "fn": (val) => val ? (val / 100).toFixed(2) : ""},
         {"name": "EOL", "property": "eol"},
         {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/set/' + row.id}, "Details"))},
     ]
