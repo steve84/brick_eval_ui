@@ -4,6 +4,7 @@ var Theme = require("../../models/theme/Theme")
 
 var Table = require("../common/Table")
 var MinifigList = require("../minifig/MinifigList")
+var InventoryPartList = require("../inventory_part/InventoryPartList")
 
 
 
@@ -61,7 +62,7 @@ var state = {
         {"name": "Anzahl Teile", "property": "num_parts"},
         {"name": "Jahr", "property": "year_of_publication"},
         {"name": "Thema", "property": "theme_id", "fn": (id) => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
-        {"name": "Verkaufspreis", "property": "retail_price", "fn": (val) => (val / 100).toFixed(2)},
+        {"name": "Verkaufspreis", "property": "retail_price", "fn": val => val ? (val / 100).toFixed(2) : ""},
         {"name": "EOL", "property": "eol"},
     ]
 }
@@ -79,6 +80,7 @@ var SetDetail =  {
         m("div", {class: "four wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory}))),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(MinifigList, {"inventory": Inventory.actualInventory}) : m("div")),
         m("div", {class: "sixteen wide column"}, m(ScoreList, {"scores": Inventory.actualInventory.scores})),
+        m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(InventoryPartList, {"inventory": Inventory.actualInventory}) : m("div")),
         m(m.route.Link, {selector: "button", class: "mini ui primary button", href: '/sets'}, "Zurück")
     ])
 }

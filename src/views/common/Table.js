@@ -33,7 +33,7 @@ var HeaderContent = {
 
 
 var PagingElement = {
-    view: function(vnode) {
+    view: function() {
         return m("div", {class: "ui right floated pagination menu"}, [
             m("a", {class: "icon item", onclick: () => {
                 state.setPage(1)
@@ -71,8 +71,9 @@ var state = {
     setOrderByDirection: () => {},
     getNumResults: () => {},
     fn: () => {},
+    rowStyle: () => {},
     renderHeaders: () => m("thead", m("tr", state.cols.map(col => m(HeaderContent, {"sortable": state.sortable, "col": col})))),
-    renderBody: () => m("tbody", state.getList().map(row => m("tr", state.cols.map(col => m(CellContent, {"col": col, "row": row}))))),
+    renderBody: () => m("tbody", state.getList().map(row => m("tr", state.rowStyle ? state.rowStyle(row) : {}, state.cols.map(col => m(CellContent, {"col": col, "row": row}))))),
     renderFooter: () => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": state.cols.length}, [
         state.pageable ? m(PagingElement) :  null,
         m("div", {class: "left floated"}, "Anzahl Einträge: " + state.getNumResults())
@@ -88,6 +89,7 @@ var Table =  {
         state.getNumResults = vnode.attrs.getNumResults
         state.cols = vnode.attrs.cols
         state.fn = vnode.attrs.fn
+        state.rowStyle = vnode.attrs.rowStyle
         if (state.pageable) {
             state.setPage = vnode.attrs.setPage
             state.getPage = vnode.attrs.getPage
