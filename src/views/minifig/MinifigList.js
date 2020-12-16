@@ -1,41 +1,42 @@
 var m = require("mithril")
-var Minifig = require("../../models/minifig/Minifig")
+var InventoryMinifig = require("../../models/inventory_minifig/InventoryMinifig")
 
 var Table = require("../common/Table")
 
-var state = {
-    cols: [
-        {"name": "Figuren-Nr.", "property": "minifig.fig_num"},
-        {"name": "Figuren-Name", "property": "minifig.name"},
-        {"name": "Anzahl Teile", "property": "minifig.num_parts"},
-        {"name": "Häufigkeit pro Set", "property": "quantity"},
-        {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/minifig/' + row.fig_id}, "Details"))},
-    ],
-    inventory_id: null
-}
-
 var MinifigList =  {
     oninit: (vnode) => {
+        vnode.state.cols = [
+            {"name": "Figuren-Nr.", "property": "minifig.fig_num"},
+            {"name": "Figuren-Name", "property": "minifig.name"},
+            {"name": "Anzahl Teile", "property": "minifig.num_parts"},
+            {"name": "Häufigkeit pro Set", "property": "quantity"},
+            {"name": "Bewertung", "property": "score.score", "fn": (row) => row["score"] ? row["score"]["score"].toFixed(4) : ""},
+            {"name": "Details", "element": (row) => m("div", m(m.route.Link, {
+                selector: "button",
+                class: "mini ui secondary button",
+                href: '/minifig/' + row.id,
+            }, "Details"))},
+        ]
         if (vnode.attrs.inventory && vnode.attrs.inventory.id) {
-            state.inventory_id = vnode.attrs.inventory.id
-            Minifig.getMinifigsByInventoryId(state.inventory_id)
+            vnode.state.inventory_id = vnode.attrs.inventory.id
+            InventoryMinifig.getMinifigsByInventoryId(vnode.state.inventory_id)
         }
     },
-    view: () => m(Table, {
+    view: (vnode) => m(Table, {
         "sortable": true,
         "pageable": true,
-        "isLoading": () => Minifig.loading,
-        "getList": () => Minifig.list,
-        "getNumResults": () => Minifig.numResults,
-        "fn": () => Minifig.getMinifigsByInventoryId(state.inventory_id),
-        "cols": state.cols,
-        "setPage": (page) => Minifig.page = page,
-        "getPage": () => Minifig.page,
-        "getTotalPages": () => Minifig.totalPages,
-        "getOrderByField": () => Minifig.orderByField,
-        "setOrderByField": (field) => Minifig.orderByField = field,
-        "getOrderByDirection": () => Minifig.orderByDirection,
-        "setOrderByDirection": (direction) => Minifig.orderByDirection = direction
+        "isLoading": () => InventoryMinifig.loading,
+        "getList": () => InventoryMinifig.list,
+        "getNumResults": () => InventoryMinifig.numResults,
+        "fn": () => InventoryMinifig.getMinifigsByInventoryId(vnode.state.inventory_id),
+        "cols": vnode.state.cols,
+        "setPage": (page) => InventoryMinifig.page = page,
+        "getPage": () => InventoryMinifig.page,
+        "getTotalPages": () => InventoryMinifig.totalPages,
+        "getOrderByField": () => InventoryMinifig.orderByField,
+        "setOrderByField": (field) => InventoryMinifig.orderByField = field,
+        "getOrderByDirection": () => InventoryMinifig.orderByDirection,
+        "setOrderByDirection": (direction) => InventoryMinifig.orderByDirection = direction
     })
 }
 

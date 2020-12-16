@@ -12,31 +12,14 @@ var Minifig = {
     orderByDirection: "asc",
     loading: false,
     queryParams: {},
-    getMinifigsByInventoryId: 
-        inventory_id => {
-            Minifig.loading = true
-            Minifig.queryParams["page"] = Minifig.page
-            Minifig.queryParams["results_per_page"] = Minifig.pageSize
-            if (!Minifig.queryParams.hasOwnProperty("q")) {
-                Minifig.queryParams["q"] = {}
-            }
-            Minifig.queryParams["q"]["filters"] = [{"name": "inventory_id", "op": "eq", "val": inventory_id}]
-            Minifig.queryParams["q"]["order_by"] = [{"field": Minifig.orderByField, "direction": Minifig.orderByDirection}]
-            tmpQueryParams = Object.assign({}, Minifig.queryParams)
-            tmpQueryParams["q"] = JSON.stringify(Minifig.queryParams["q"])
-            Minifig.loading = true
-            m.request({
-                method: "GET",
-                url: baseUrl + "inventory_minifigs",
-                params: tmpQueryParams
-            }).then(res => {
-                Minifig.list = res.objects
-                Minifig.page = res.page
-                Minifig.numResults = res.num_results
-                Minifig.totalPages = res.total_pages
-                Minifig.loading = false
-            })
-        }
+    actualMinifig: {},
+    getMinifigById:
+        id => m.request({
+            method: "GET",
+            url: baseUrl + "minifigs/" + id
+        }).then(res => {
+            Minifig.actualMinifig = res
+        })
 }
 
 module.exports = Minifig

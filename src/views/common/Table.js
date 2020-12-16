@@ -5,7 +5,7 @@ var CellContent = {
         if (vnode.attrs.col.element) {
             return m("td", {"data-label": vnode.attrs.name}, vnode.attrs.col.element(vnode.attrs.row))
         } else if (vnode.attrs.col.property) {
-            return m("td", {"data-label": vnode.attrs.col.name}, vnode.attrs.col.fn ? vnode.attrs.col.fn(vnode.attrs.row[vnode.attrs.col.property]) : vnode.attrs.col.property.split('.').reduce((o, k) =>  o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.row))
+            return m("td", {"data-label": vnode.attrs.col.name}, vnode.attrs.col.fn ? vnode.attrs.col.fn(vnode.attrs.row) : vnode.attrs.col.property.split('.').reduce((o, k) =>  o && o.hasOwnProperty(k)  ? o[k] : "", vnode.attrs.row))
         }
     }
 }
@@ -35,20 +35,20 @@ var HeaderContent = {
 var PagingElement = {
     view: function(vnode) {
         return m("div", {class: "ui right floated pagination menu"}, [
-            m("a", {class: "icon item", onclick: () => {
+            m("a", {class: "icon " + (vnode.attrs.state.getPage() === 1 ? "disabled" : "")  + " item", onclick: () => {
                 vnode.attrs.state.setPage(1)
                 vnode.attrs.state.fn()
             }}, m("i", {class: "angle double left icon"})),
-            m("a", {class: "icon item", onclick: () => {
+            m("a", {class: "icon " + (vnode.attrs.state.getPage() === 1 ? "disabled" : "")  + " item", onclick: () => {
                 vnode.attrs.state.setPage(vnode.attrs.state.getPage() - 1)
                 vnode.attrs.state.fn()
             }}, m("i", {class: "angle left icon"})),
             m("a", {class: "item"}, vnode.attrs.state.getPage() + " von " + vnode.attrs.state.getTotalPages()),
-            m("a", {class: "icon item", onclick: () => {
+            m("a", {class: "icon " + (vnode.attrs.state.getPage() === vnode.attrs.state.getTotalPages() ? "disabled" : "")  + " item", onclick: () => {
                 vnode.attrs.state.setPage(vnode.attrs.state.getPage() + 1)
                 vnode.attrs.state.fn()
             }}, m("i", {class: "angle right icon"})),
-            m("a", {class: "icon item", onclick: () => {
+            m("a", {class:  "icon " + (vnode.attrs.state.getPage() === vnode.attrs.state.getTotalPages() ? "disabled" : "")  + " item", onclick: () => {
                 vnode.attrs.state.setPage(vnode.attrs.state.getTotalPages())
                 vnode.attrs.state.fn()
             }}, m("i", {class: "angle double right icon"}))

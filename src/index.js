@@ -2,6 +2,7 @@ var m = require("mithril")
 
 var SetList = require("./views/set/SetList")
 var SetDetail = require("./views/set/SetDetail")
+var MinifigDetail = require("./views/minifig/MinifigDetail")
 
 
 var q = {
@@ -51,6 +52,7 @@ var mainContainerTag = mainTag ? mainTag.children[0] : undefined
 if (mainContainerTag) {
     m.route(mainContainerTag.dom, "/sets", {
         "/sets": SetList,
-        "/set/:key": SetDetail
+        "/set/:key": SetDetail,
+        "/minifig/:key": MinifigDetail
     })
 }
