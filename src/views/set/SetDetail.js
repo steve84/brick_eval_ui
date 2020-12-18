@@ -57,7 +57,6 @@ var ImageElement = {
     }
 }
 
-
 var SetDetail =  {
     oninit: (vnode) => {
         vnode.state.cols = [

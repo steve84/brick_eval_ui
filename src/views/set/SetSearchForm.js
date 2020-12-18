@@ -33,7 +33,7 @@ var resetForm = () => {
     state.maxNumParts = null
     state.priceFrom = null
     state.priceTo = null
-    state.setState = null
+    state.setState = -1
     state.setTheme = null
     Set.page = 1
     delete Set.queryParams.q
@@ -69,13 +69,8 @@ var generateQuery = () => {
             ]}
         )
     }
-    if (state.setState) {
-        /*query["filters"].push(
-            {"or": [
-                {"name": "retail_price", "op": "is_null"},
-                {"name": "retail_price", "op": "<=", "val": state.priceTo}
-            ]}
-        )*/
+    if (state.setState && state.setState > -1) {
+        query["filters"].push({"name": "eol", "op": "eq", "val": state.setState})
     }
     if (state.setTheme) {
         query["filters"].push({"name": "theme_id", "op": "in", "val": state.setTheme.split(",")})
@@ -134,11 +129,11 @@ var SetSearchForm =  {
             m("div", {class: "field"}, [
                 m("label", "Status:"),
                 m("select", {class: "ui search dropdown", "name": "eol", "value": state.setState, oninput: (e) => state.setState = e.target.value}, [
-                    m("option", {"value": null}, "Alle"),
-                    m("option", {"value": "0"}, "Verfügbar"),
-                    m("option", {"value": "1"}, "EOL"),
-                    m("option", {"value": "2"}, "Einstellung in Kürze"),
-                    m("option", {"value": "3"}, "EOL erwartet"),
+                    m("option", {"value": -1}, "Alle"),
+                    m("option", {"value": 0}, "Altes Produkt"),
+                    m("option", {"value": 1}, "Verfügbar"),
+                    m("option", {"value": 2}, "Einstellung in Kürze"),
+                    m("option", {"value": 3}, "EOL erwartet"),
                 ])
             ]),
             m("div", {class: "field"}, [
