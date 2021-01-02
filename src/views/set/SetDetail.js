@@ -3,12 +3,12 @@ var m = require("mithril")
 var Inventory = require("../../models/inventory/Inventory")
 var Theme = require("../../models/theme/Theme")
 var InventoryPart = require("../../models/inventory_part/InventoryPart")
-var Minifig = require("../../models/minifig/Minifig")
+var InventoryMinifig = require("../../models/inventory_minifig/InventoryMinifig")
 
 var Table = require("../common/Table")
 var MinifigList = require("../minifig/MinifigList")
 var InventoryPartList = require("../inventory_part/InventoryPartList")
-const InventoryMinifig = require("../../models/inventory_minifig/InventoryMinifig")
+var StatisticOverview = require("../statistic/StatisticOverview")
 
 
 
@@ -74,9 +74,10 @@ var SetDetail =  {
         Inventory.actualInventory = {};
         Inventory.getInventoryBySetId(vnode.attrs.key)},
     onremove: () => {InventoryPart.page = 1; InventoryMinifig.page = 1},
-    view: (vnode) => m("div", {class: "ui two column grid"}, [
-        m("div", {class: "twelve wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": Inventory.actualInventory})))),
-        m("div", {class: "four wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory}))),
+    view: (vnode) => m("div", {class: "ui centered grid"}, [
+        m("div", {class: "eight wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": Inventory.actualInventory})))),
+        m("div", {class: "three wide computer sixteen wide tablet column"},  Inventory.actualInventory && Inventory.actualInventory.set ? m(StatisticOverview, {"inventory": Inventory.actualInventory, "is_minifig": false}) : m("div")),
+        m("div", {class: "five wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory}))),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(MinifigList, {"inventory": Inventory.actualInventory}) : m("div")),
         m("div", {class: "sixteen wide column"}, m(ScoreList, {"scores": Inventory.actualInventory.scores})),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(InventoryPartList, {"inventory_id": Inventory.actualInventory.id}) : m("div")),

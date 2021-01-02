@@ -4,6 +4,8 @@ var SetList = require("./views/set/SetList")
 var SetDetail = require("./views/set/SetDetail")
 var MinifigDetail = require("./views/minifig/MinifigDetail")
 
+var Statistic = require('./models/statistic/Statistic')
+
 
 var q = {
     "filters": [
@@ -17,6 +19,7 @@ var q = {
 }
 $.fn.api.settings.api["search sets"] = 'http://localhost:5000/api/sets?q=' + JSON.stringify(q)
 
+Statistic.getMinifigStatistics()
 
 m.render(document.body, [
     m("nav", m("div", {class: "ui menu"}, [
@@ -39,8 +42,8 @@ $('#set_search').search(
         apiSettings: {
             action: "search sets",
             method: "GET",
-            onResponse: (resp) => resp.objects.map(a => {return {"title": a.set_num, "description": a.name, "id": a.id}}),
-            beforeSend: (settings) => settings.urlData = {"set_search": $('#set_search input').val()},
+            onResponse: resp => resp.objects.map(a => {return {"title": a.set_num, "description": a.name, "id": a.id}}),
+            beforeSend: settings => settings.urlData = {"set_search": $('#set_search input').val()},
         },
         onSelect: (res, resp) => m.route.set('set/:id', {"id": res.id})
     }

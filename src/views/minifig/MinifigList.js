@@ -15,6 +15,9 @@ var MinifigList =  {
                 selector: "button",
                 class: "mini ui secondary button",
                 href: '/minifig/' + row.id,
+                options: {
+                    state: {backlink: m.route.get()}
+                }
             }, "Details"))},
         ]
         if (vnode.attrs.inventory && vnode.attrs.inventory.id) {

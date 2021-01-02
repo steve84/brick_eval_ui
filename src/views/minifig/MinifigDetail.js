@@ -1,18 +1,15 @@
 var m = require("mithril")
 
-var Inventory = require("../../models/inventory/Inventory")
-var Theme = require("../../models/theme/Theme")
-var InventoryPart = require("../../models/inventory_part/InventoryPart")
-var Minifig = require("../../models/minifig/Minifig")
+var Statistic = require("../../models/statistic/Statistic")
 var InventoryMinifig = require("../../models/inventory_minifig/InventoryMinifig")
 
 var Table = require("../common/Table")
-var MinifigList = require("../minifig/MinifigList")
 var InventoryPartList = require("../inventory_part/InventoryPartList")
 
 
 
 var PropertyList = {
+    oncreate: () => setTimeout(() => {$('.rating').rating('disable')}, 500),
     view: function(vnode) {
         if (vnode.attrs.data) {
             return m("tbody", vnode.attrs.cols.map(col => m("tr", [
@@ -57,22 +54,22 @@ var ImageElement = {
     }
 }
 
-
 var MinifigDetail =  {
     oninit: (vnode) => {
+        vnode.state.backlink = vnode.attrs.backlink
         vnode.state.cols = [
             {"name": "Figuren-Nr.", "property": "minifig.fig_num"},
             {"name": "Name", "property": "minifig.name"},
             {"name": "Anzahl Teile", "property": "minifig.num_parts"},
-            {"name": "Bewertung", "property": "score.score", "fn": data => data["score_id"] ? data["score"]["score"].toFixed(4) : ""},
+            {"name": "Bewertung", "property": null, "fn": data => data && data['score'] ? [m("div", {class: "ui star rating", "data-rating": Statistic.getMinifigScoreQuantil(data["score"]["score"]), "data-max-rating": "4"}), m("span", " (" + data["score"]["score"].toFixed(4) + ")")] : ""},
             {"name": "Berechnungsdatum", "property": "score.calc_date", "fn": data => data["score_id"] ? new Date(data["score"]["calc_date"]).toLocaleDateString() : ""},
         ]
         InventoryMinifig.actualInventoryMinifig = {}
         InventoryMinifig.getInventoryMinifigById(vnode.attrs.key)},
     view: (vnode) => m("div", {class: "ui two column grid"}, [
         m("div", {class: "sixteen wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": InventoryMinifig.actualInventoryMinifig})))),
-        m("div", {class: "sixteen wide column"}, InventoryMinifig.actualInventoryMinifig && InventoryMinifig.actualInventoryMinifig.inventories ? m(InventoryPartList, {"inventory_id": InventoryMinifig.actualInventoryMinifig.inventories.filter(i => i.is_latest)[0].id}) : m("div")),
-        m(m.route.Link, {selector: "button", class: "mini ui primary button", href: '/sets'}, "Zurück")
+        m("div", {class: "sixteen wide column"}, InventoryMinifig.actualInventoryMinifig && InventoryMinifig.actualInventoryMinifig.inventory_minifig_rel ? m(InventoryPartList, {"inventory_id": InventoryMinifig.actualInventoryMinifig.inventory_minifig_rel[0].inventory_id}) : m("div")),
+        m(m.route.Link, {selector: "button", class: "mini ui primary button", href: vnode.state.backlink}, "Zurück")
     ])
 }
 
