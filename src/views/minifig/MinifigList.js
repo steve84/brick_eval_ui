@@ -8,6 +8,8 @@ var MinifigList =  {
         vnode.state.cols = [
             {"name": "Figuren-Nr.", "property": "minifig.fig_num"},
             {"name": "Figuren-Name", "property": "minifig.name"},
+            {"name": "Ersterscheinung", "property": "minifig.year_of_publication"},
+            {"name": "Exklusiv", "property": "minifig.has_unique_part", "fn": (row) => row["has_unique_part"] ? "Ja" : "Nein"},
             {"name": "Anzahl Teile", "property": "minifig.num_parts"},
             {"name": "Häufigkeit pro Set", "property": "quantity"},
             {"name": "Bewertung", "property": "score.score", "fn": (row) => row["score"] ? row["score"]["score"].toFixed(4) : ""},

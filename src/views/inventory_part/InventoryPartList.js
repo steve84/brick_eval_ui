@@ -7,7 +7,7 @@ var Table = require("../common/Table")
 
 var state = {
     cols: [
-        {"name": "Bild", "property": "element.id", "fn": row => row["element"].length >= 1 ? m("div", m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["element"][0]["element_id"] + ".jpg/75x75p.jpg"})) : ""},
+        {"name": "Bild", "property": "elements.id", "fn": row => row["elements"].length >= 1 ? m("div", m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["elements"][0]["element_id"] + ".jpg/75x75p.jpg"})) : ""},
         {"name": "Name", "property": "part.name"},
         {"name": "Teil-Nr.", "property": "part.part_num"},
         {"name": "Material", "property": "part.part_material"},
