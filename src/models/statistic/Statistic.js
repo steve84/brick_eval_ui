@@ -12,7 +12,7 @@ var Statistic = {
             params: {
                 "q": JSON.stringify({"filters": [
                     {"and": [
-                        {"name": "is_set", "op": "eq", "val": 1},
+                        {"name": "is_set", "op": "eq", "val": true},
                         {"or": [
                             {"name": "theme_id", "op": "is_null"},
                             {"name": "theme_id", "op": "eq", "val": theme_id}
@@ -28,7 +28,7 @@ var Statistic = {
             params: {
                 "q": JSON.stringify({
                     "filters": [
-                        {"name": "is_set", "op": "eq", "val": 0}
+                        {"name": "is_set", "op": "eq", "val": false}
                     ],
                     "single": true
                 })

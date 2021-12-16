@@ -25,7 +25,7 @@ var Set = {
         Set.loading = true;
         return m.request({
             method: "GET",
-            url: baseUrl + "sets",
+            url: baseUrl + "v_sets",
             params: tmpQueryParams
         }).then(res => {
             Set.list = res.objects
@@ -39,7 +39,7 @@ var Set = {
         id => {
             Set.loading = true
             Set.actualSet = {}
-            m.request({method: "GET", url: baseUrl + "sets/" + id}).then(res => Set.actualSet = res)
+            m.request({method: "GET", url: baseUrl + "v_sets/" + id}).then(res => Set.actualSet = res)
         }
 }
 

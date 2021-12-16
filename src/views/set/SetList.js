@@ -11,10 +11,11 @@ var state = {
         {"name": "Set-Name", "property": "name"},
         {"name": "Anzahl Teile", "property": "num_parts"},
         {"name": "Jahr", "property": "year_of_publication"},
-        {"name": "Thema", "property": "theme.name"},
+        {"name": "Thema", "property": "theme"},
+        {"name": "Basis-Thema", "property": "root_theme"},
         {"name": "Verkaufspreis", "property": "retail_price", "fn": (row) => row["retail_price"] ? (row["retail_price"] / 100).toFixed(2) : ""},
         {"name": "EOL", "property": "eol"},
-        {"name": "Bewertung", "property": "score.score", "fn": (row) => row["score"] ? row["score"]["score"].toFixed(4) : ""},
+        {"name": "Bewertung", "property": "score", "fn": (row) => row["score"] ? row["score"].toFixed(4) : ""},
         {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/set/' + row.id}, "Details"))},
     ]
 }

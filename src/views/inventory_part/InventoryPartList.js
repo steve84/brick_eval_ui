@@ -7,15 +7,16 @@ var Table = require("../common/Table")
 
 var state = {
     cols: [
-        {"name": "Bild", "property": "elements.id", "fn": row => row["elements"].length >= 1 ? m("div", m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["elements"][0]["element_id"] + ".jpg/75x75p.jpg"})) : ""},
-        {"name": "Name", "property": "part.name"},
-        {"name": "Teil-Nr.", "property": "part.part_num"},
-        {"name": "Material", "property": "part.part_material"},
+        {"name": "Bild", "property": "element_id", "fn": row => m("div", m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["element_id"] + ".jpg/75x75p.jpg"}))},
+        {"name": "Name", "property": "name"},
+        {"name": "Teil-Nr.", "property": "part_num"},
+        {"name": "Material", "property": "part_material"},
         {"name": "Ersatzteil", "property": "is_spare", "fn": row => row["is_spare"] ? "Ja" : "Nein"},
-        {"name": "Farbe", "property": "color.name"},
-        {"name": "Transparent", "property": "color.is_trans", "fn": row => row["color"]["is_trans"] ? "Ja" : "Nein"},
+        {"name": "Farbe", "property": "color_name"},
+        {"name": "Transparent", "property": "is_trans", "fn": row => row["is_trans"] ? "Ja" : "Nein"},
         {"name": "Anzahl", "property": "quantity"},
-        {"name": "Häufigkeit", "property": "part_color_frequency.total_amount", "fn": row => row["part_color_frequency"][0]["total_amount"]},
+        {"name": "Häufigkeit", "property": "total_amount"},
+        {"name": "Element-ID", "property": "element_id"}
     ],
     inventory_id: null
 }
@@ -35,8 +36,7 @@ var InventoryPartList =  {
             "getList": () => InventoryPart.list,
             "fn": () => InventoryPart.getInventoryPartsByInventoryId(state.inventory_id),
             "rowStyle": (row) => {
-                rgb = ["color", "rgb"].reduce((o, k) =>  o.hasOwnProperty(k) ? o[k] : "", row)
-                return {style: "background: #" + rgb + "; color: " + ColorUtil.calculateFontColor(rgb)}
+                return {style: "background: #" + row.rgb + "; color: " + ColorUtil.calculateFontColor(row.rgb)}
             },
             "cols": state.cols,
             "getNumResults": () => InventoryPart.numResults,

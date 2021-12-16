@@ -1,5 +1,7 @@
 var m = require("mithril")
 
+var PartColorFrequency = require("../part_color_frequency/PartColorFrequency")
+
 var baseUrl = "http://localhost:5000/api/"
 
 var InventoryPart = {
@@ -8,7 +10,7 @@ var InventoryPart = {
     totalPages: 0,
     page: 1,
     pageSize: 15,
-    orderByField: "color_id",
+    orderByField: "inventory_id",
     orderByDirection: "asc",
     loading: false,
     queryParams: {},
@@ -24,9 +26,9 @@ var InventoryPart = {
             tmpQueryParams = Object.assign({}, InventoryPart.queryParams)
             tmpQueryParams["q"] = JSON.stringify(InventoryPart.queryParams["q"])
             InventoryPart.loading = true
-            m.request({
+            return m.request({
                 method: "GET",
-                url: baseUrl + "inventory_parts",
+                url: baseUrl + "v_inventory_parts",
                 params: tmpQueryParams
             }).then(res => {
                 InventoryPart.list = res.objects
