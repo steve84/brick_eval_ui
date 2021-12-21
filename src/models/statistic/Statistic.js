@@ -10,7 +10,7 @@ var Statistic = {
             method: "GET",
             url: baseUrl + "statistics",
             params: {
-                "q": JSON.stringify({"filters": [
+                "filter[objects]": JSON.stringify([
                     {"and": [
                         {"name": "is_set", "op": "eq", "val": true},
                         {"or": [
@@ -18,23 +18,26 @@ var Statistic = {
                             {"name": "theme_id", "op": "eq", "val": theme_id}
                         ]}
                     ]}
-                ]})
-            }
+                ]),
+                "include": "theme"
+            },
+            headers: {"Accept": "application/vnd.api+json"}
         }),
     getMinifigStatistics:
         () => m.request({
             method: "GET",
             url: baseUrl + "statistics",
             params: {
-                "q": JSON.stringify({
-                    "filters": [
+                "filter[objects]": JSON.stringify([
                         {"name": "is_set", "op": "eq", "val": false}
-                    ],
-                    "single": true
-                })
-            }
+                    ]
+                )
+            },
+            headers: {"Accept": "application/vnd.api+json"}
         }).then(res => {
-            Statistic.minifigStat = res
+            if (res.data && res.data.length === 1) {
+                Statistic.minifigStat = res.data[0].attributes
+            }
         }),
     
     getMinifigScoreQuantil:

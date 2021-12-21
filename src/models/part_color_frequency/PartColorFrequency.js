@@ -19,7 +19,8 @@ var PartColorFrequency = {
             return new Promise(resolve => resolve(m.request({
                 method: "GET",
                 url: baseUrl + "part_color_frequencies",
-                params: tmpQueryParams
+                params: tmpQueryParams,
+                headers: {"Accept": "application/vnd.api+json"}
             })))
     }
 }

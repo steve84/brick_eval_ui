@@ -8,23 +8,23 @@ var Theme = require("../../models/theme/Theme")
 var StatisticOverview =  {
     oninit: (vnode) => {
         vnode.state.is_minifig = vnode.attrs.is_minifig
-        if (vnode.attrs.inventory && vnode.attrs.inventory.set) {
-            vnode.state.theme_id = vnode.attrs.inventory.set.root_theme_id
-            if (vnode.attrs.inventory.scores && vnode.attrs.inventory.scores.length > 0) {
-                vnode.state.score = vnode.attrs.inventory.scores.find(s => s.id == vnode.attrs.inventory.set.score_id)
+        if (vnode.attrs.inventory && vnode.attrs.inventory.attributes && vnode.attrs.inventory.attributes.set) {
+            vnode.state.theme_id = vnode.attrs.inventory.attributes.set.theme_id
+            if (vnode.attrs.inventory.attributes.scores && vnode.attrs.inventory.attributes.scores.length > 0) {
+                vnode.state.score = vnode.attrs.inventory.attributes.scores.find(s => s.id == vnode.attrs.inventory.attributes.set.score_id)
                 vnode.state.score = vnode.state.score ? vnode.state.score.score : null
             }
         }
         if (vnode.state.theme_id) {
             if (Statistic.setStat && !Statistic.setStat.hasOwnProperty(vnode.state.theme_id)) {
                 Statistic.getSetStatistics(vnode.state.theme_id).then(res => {
-                    themeStats = res.objects.find(s => s.theme_id == vnode.state.theme_id)
+                    themeStats = res.data.find(s => s.relationships.theme.data && s.relationships.theme.data.id === vnode.state.theme_id)
                     if (themeStats) {
-                        Statistic.setStat[vnode.state.theme_id] = themeStats
+                        Statistic.setStat[vnode.state.theme_id] = themeStats.attributes
                     }
-                    overallStats = res.objects.find(s => !!s.theme_id)
+                    overallStats = res.data.find(s => !!s.relationships.theme.data)
                     if (!Statistic.setStat.hasOwnProperty(0) && overallStats) {
-                        Statistic.setStat[0] = overallStats
+                        Statistic.setStat[0] = overallStats.attributes
                     }
                     vnode.state.stats = Statistic.setStat
                 })

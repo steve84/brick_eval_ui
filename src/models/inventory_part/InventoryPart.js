@@ -11,30 +11,32 @@ var InventoryPart = {
     page: 1,
     pageSize: 15,
     orderByField: "inventory_id",
-    orderByDirection: "asc",
+    orderByDirection: "",
     loading: false,
     queryParams: {},
     getInventoryPartsByInventoryId: 
         inventory_id => {
-            InventoryPart.queryParams["page"] = InventoryPart.page
-            InventoryPart.queryParams["results_per_page"] = InventoryPart.pageSize
-            if (!InventoryPart.queryParams.hasOwnProperty("q")) {
-                InventoryPart.queryParams["q"] = {}
+            InventoryPart.queryParams["page[number]"] = InventoryPart.page
+            InventoryPart.queryParams["page[size]"] = InventoryPart.pageSize
+            if (!InventoryPart.queryParams.hasOwnProperty("filter[objects]")) {
+                InventoryPart.queryParams["filter[objects]"] = {}
             }
-            InventoryPart.queryParams["q"]["filters"] = [{"name": "inventory_id", "op": "eq", "val": inventory_id}]
-            InventoryPart.queryParams["q"]["order_by"] = [{"field": InventoryPart.orderByField, "direction": InventoryPart.orderByDirection}]
+            InventoryPart.queryParams["filter[objects]"] = [{"name": "inventory_id", "op": "eq", "val": inventory_id}]
+            InventoryPart.queryParams["sort"] = InventoryPart.orderByDirection + InventoryPart.orderByField, 
             tmpQueryParams = Object.assign({}, InventoryPart.queryParams)
-            tmpQueryParams["q"] = JSON.stringify(InventoryPart.queryParams["q"])
+            tmpQueryParams["filter[objects]"] = JSON.stringify(InventoryPart.queryParams["filter[objects]"])
             InventoryPart.loading = true
             return m.request({
                 method: "GET",
                 url: baseUrl + "v_inventory_parts",
-                params: tmpQueryParams
+                params: tmpQueryParams,
+                headers: {"Accept": "application/vnd.api+json"}
             }).then(res => {
-                InventoryPart.list = res.objects
-                InventoryPart.numResults = res.num_results
-                InventoryPart.page = res.page
-                InventoryPart.totalPages = res.total_pages
+                InventoryPart.list = res.data
+                InventoryPart.numResults = res.meta.total
+                InventoryPart.page = tmpQueryParams["page[number]"]
+                InventoryPart.pageSize = tmpQueryParams["page[size]"]
+                InventoryPart.totalPages = Math.trunc(InventoryPart.numResults / InventoryPart.pageSize) + 1
                 InventoryPart.loading = false
             })
     }

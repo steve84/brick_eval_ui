@@ -33,7 +33,8 @@ var Theme = {
         () => m.request(
                 {
                     method: "GET",
-                    url: baseUrl + "themes/hierarchy"
+                    url: baseUrl + "themes/hierarchy",
+                    headers: {"Accept": "application/vnd.api+json"}
                 }
             ).then(res => {
                 Theme.lookup = addFullName(res.reduce(reducer, {}))

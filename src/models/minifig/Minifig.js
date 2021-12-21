@@ -9,16 +9,17 @@ var Minifig = {
     page: 1,
     pageSize: 15,
     orderByField: "id",
-    orderByDirection: "asc",
+    orderByDirection: "",
     loading: false,
     queryParams: {},
     actualMinifig: {},
     getMinifigById:
         id => m.request({
             method: "GET",
-            url: baseUrl + "minifigs/" + id
+            url: baseUrl + "minifigs/" + id,
+            headers: {"Accept": "application/vnd.api+json"}
         }).then(res => {
-            Minifig.actualMinifig = res
+            Minifig.actualMinifig = res.data
         })
 }
 

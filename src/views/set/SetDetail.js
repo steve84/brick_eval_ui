@@ -14,10 +14,10 @@ var StatisticOverview = require("../statistic/StatisticOverview")
 
 var PropertyList = {
     view: function(vnode) {
-        if (vnode.attrs.data && vnode.attrs.data.set) {
+        if (vnode.attrs.data && vnode.attrs.data.attributes && vnode.attrs.data.attributes.set) {
             return m("tbody", vnode.attrs.cols.map(col => m("tr", [
                 m("td", {class: "two wide column"},  col.name), 
-                m("td", col.fn ? col.fn(vnode.attrs.data.set[col.property]) : col.property.split('.').reduce((o, k) => o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.data.set))
+                m("td", col.fn ? col.fn(vnode.attrs.data.attributes.set[col.property]) : col.property.split('.').reduce((o, k) => o.hasOwnProperty(k) ? o[k] : "", vnode.attrs.data.attributes.set))
             ])))
         }
     }
@@ -29,13 +29,13 @@ var ScoreList = {
             {"name": "Bewertung", "property": "score", "fn": row => row["score"].toFixed(4)},
             {"name": "Berechnungsdatum", "property": "calc_date", "fn": row => row["calc_date"] ? new Date(row["calc_date"]).toLocaleDateString() : ""},
         ]
-        if (vnode.attrs.scores) {
+        if (vnode.attrs.inventory && vnode.attrs.inventory.attributes && vnode.attrs.inventory.attributes.scores) {
             return m(Table, {
                 "sortable": false,
                 "pageable": false,
                 "isLoading": () => false,
-                "getList": () => vnode.attrs.scores,
-                "getNumResults": () => vnode.attrs.scores.length,
+                "getList": () => vnode.attrs.inventory.attributes.scores.map(e => ({attributes: e})),
+                "getNumResults": () => vnode.attrs.inventory.attributes.scores.length,
                 "cols": cols,
             })
         }
@@ -47,8 +47,8 @@ var ImageElement = {
         if (vnode.attrs.data && vnode.attrs.data.set) {
             return [
                 m("div", {class: "ui slide masked reveal image" }, [
-                    m("img", {class: "visible content", src: 'https://img.bricklink.com/ItemImage/ON/0/' + Inventory.actualInventory.set.set_num + '.png'}),
-                    m("img", {class: "hidden content", src: 'https://img.bricklink.com/ItemImage/SN/0/' + Inventory.actualInventory.set.set_num + '.png'}),
+                    m("img", {class: "visible content", src: 'https://img.bricklink.com/ItemImage/ON/0/' + vnode.attrs.data.set.set_num + '.png'}),
+                    m("img", {class: "hidden content", src: 'https://img.bricklink.com/ItemImage/SN/0/' + vnode.attrs.data.set.set_num + '.png'}),
                 ]),
                 m("div", {class: "ui slide masked reveal image" }, m("div", {class: "extra content"}, "2 Bilder"))
             ]
@@ -76,10 +76,10 @@ var SetDetail =  {
     onremove: () => {InventoryPart.page = 1; InventoryMinifig.page = 1},
     view: (vnode) => m("div", {class: "ui centered grid"}, [
         m("div", {class: "eight wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": Inventory.actualInventory})))),
-        m("div", {class: "three wide computer sixteen wide tablet column"},  Inventory.actualInventory && Inventory.actualInventory.set ? m(StatisticOverview, {"inventory": Inventory.actualInventory, "is_minifig": false}) : m("div")),
-        m("div", {class: "five wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory}))),
+        m("div", {class: "three wide computer sixteen wide tablet column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(StatisticOverview, {"inventory": Inventory.actualInventory, "is_minifig": false}) : m("div")),
+        m("div", {class: "five wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {"data": Inventory.actualInventory && Inventory.actualInventory.attributes ? Inventory.actualInventory.attributes : {}}))),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(MinifigList, {"inventory": Inventory.actualInventory}) : m("div")),
-        m("div", {class: "sixteen wide column"}, m(ScoreList, {"scores": Inventory.actualInventory.scores})),
+        m("div", {class: "sixteen wide column"}, Inventory.actualInventory ? m(ScoreList, {"inventory": Inventory.actualInventory}) : m("div")),
         m("div", {class: "sixteen wide column"}, Inventory.actualInventory && Inventory.actualInventory.id ? m(InventoryPartList, {"inventory_id": Inventory.actualInventory.id}) : m("div")),
         m(m.route.Link, {selector: "button", class: "mini ui primary button", href: '/sets'}, "Zurück")
     ]),

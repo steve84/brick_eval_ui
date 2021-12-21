@@ -40,21 +40,21 @@ var resetForm = () => {
 }
 
 var generateQuery = () => {
-    query = {"filters": []}
+    query = []
     if (state.yearFrom) {
-        query["filters"].push({"name": "year_of_publication", "op": ">=", "val": state.yearFrom})
+        query.push({"name": "year_of_publication", "op": ">=", "val": state.yearFrom})
     }
     if (state.yearTo) {
-        query["filters"].push({"name": "year_of_publication", "op": "<=", "val": state.yearTo})
+        query.push({"name": "year_of_publication", "op": "<=", "val": state.yearTo})
     }
     if (state.minNumParts) {
-        query["filters"].push({"name": "num_parts", "op": ">=", "val": state.minNumParts})
+        query.push({"name": "num_parts", "op": ">=", "val": state.minNumParts})
     }
     if (state.maxNumParts) {
-        query["filters"].push({"name": "num_parts", "op": "<=", "val": state.maxNumParts})
+        query.push({"name": "num_parts", "op": "<=", "val": state.maxNumParts})
     }
     if (state.priceFrom) {
-        query["filters"].push(
+        query.push(
             {"or": [
                 {"name": "retail_price", "op": "is_null"},
                 {"name": "retail_price", "op": ">=", "val": state.priceFrom}
@@ -62,7 +62,7 @@ var generateQuery = () => {
         )
     }
     if (state.priceTo) {
-        query["filters"].push(
+        query.push(
             {"or": [
                 {"name": "retail_price", "op": "is_null"},
                 {"name": "retail_price", "op": "<=", "val": state.priceTo}
@@ -70,10 +70,10 @@ var generateQuery = () => {
         )
     }
     if (state.setState && state.setState > -1) {
-        query["filters"].push({"name": "eol", "op": "eq", "val": state.setState})
+        query.push({"name": "eol", "op": "eq", "val": state.setState})
     }
     if (state.setTheme) {
-        query["filters"].push({"name": "theme_id", "op": "in", "val": state.setTheme.split(",")})
+        query.push({"name": "theme_id", "op": "in", "val": state.setTheme.split(",")})
     }
     return query
 }
@@ -91,7 +91,7 @@ var SetSearchForm =  {
         m("div", {class: "active content"}, m("p", m("form", {
         class: "ui form",
         style: "margin-top: 15px",
-        onsubmit: (e) => {e.preventDefault(); Set.page = 1; Set.queryParams["q"] = generateQuery(); Set.getSets()},
+        onsubmit: (e) => {e.preventDefault(); Set.page = 1; Set.queryParams["filter[objects]"] = generateQuery(); Set.getSets()},
         onreset: (e) => {resetForm(); Set.page = 1; Set.getSets()}
     },
     [

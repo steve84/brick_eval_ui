@@ -14,16 +14,16 @@ var HeaderContent = {
     view: function(vnode) {
         var properties = {}
         if (vnode.attrs.sortable) {
-            if (vnode.attrs.col.property === vnode.attrs.state.getOrderByField().replace("__", ".")) {
-                properties["class"] = "sorted " + (vnode.attrs.state.getOrderByDirection() === "desc" ? "descending" : "ascending")
+            if (vnode.attrs.col.property === vnode.attrs.state.getOrderByField()) {
+                properties["class"] = "sorted " + (vnode.attrs.state.getOrderByDirection() === "-" ? "descending" : "ascending")
             }
             properties["onclick"] = (e) => {
-                if (vnode.attrs.state.getOrderByField() === vnode.attrs.col.property.replace(".", "__")) {
-                    vnode.attrs.state.setOrderByDirection(vnode.attrs.state.getOrderByDirection() === "asc" ? "desc" : "asc")
+                if (vnode.attrs.state.getOrderByField() === vnode.attrs.col.property) {
+                    vnode.attrs.state.setOrderByDirection(vnode.attrs.state.getOrderByDirection() === "" ? "-" : "")
                 } else {
-                    vnode.attrs.state.setOrderByDirection("asc")
+                    vnode.attrs.state.setOrderByDirection("")
                 }
-                vnode.attrs.state.setOrderByField(vnode.attrs.col.property.replace(".", "__"))
+                vnode.attrs.state.setOrderByField(vnode.attrs.col.property)
                 vnode.attrs.state.fn()
             }
         }
@@ -94,7 +94,7 @@ var Table =  {
     fn: () => {},
     rowStyle: () => {},
     renderHeaders: (vnode) => m("thead", m("tr", vnode.state.cols.map(col => m(HeaderContent, {"sortable": vnode.state.sortable, "col": col, "state": vnode.state})))),
-    renderBody: (vnode) => m("tbody", vnode.state.getList().map(row => m("tr", vnode.state.rowStyle ? vnode.state.rowStyle(row) : {}, vnode.state.cols.map(col => m(CellContent, {"col": col, "row": row}))))),
+    renderBody: (vnode) => m("tbody", vnode.state.getList().map(row => m("tr", vnode.state.rowStyle ? vnode.state.rowStyle(row.attributes) : {}, vnode.state.cols.map(col => m(CellContent, {"col": col, "row": row.attributes}))))),
     renderFooter: (vnode) => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": vnode.state.cols.length}, [
         vnode.state.pageable ? m(PagingElement, {"state": vnode.state}) :  null,
         m("div", {class: "left floated"}, "Anzahl Einträge: " + vnode.state.getNumResults())

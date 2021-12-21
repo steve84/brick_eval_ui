@@ -1,4 +1,5 @@
 var m = require("mithril")
+const SetList = require("../../views/set/SetList")
 
 var baseUrl = "http://localhost:5000/api/"
 
@@ -9,29 +10,32 @@ var Set = {
     page: 1,
     pageSize: 15,
     orderByField: "set_num",
-    orderByDirection: "asc",
+    orderByDirection: "",
     loading: false,
     actualSet: {},
     queryParams: {},
     getSets: function() {
-        Set.queryParams["page"] = Set.page
-        Set.queryParams["results_per_page"] = Set.pageSize
-        if (!Set.queryParams.hasOwnProperty("q")) {
-            Set.queryParams["q"] = {}
+        Set.queryParams["page[number]"] = Set.page
+        Set.queryParams["page[size]"] = Set.pageSize
+        if (!Set.queryParams.hasOwnProperty("filter[objects]")) {
+            Set.queryParams["filter[objects]"] = {}
         }
-        Set.queryParams["q"]["order_by"] = [{"field": Set.orderByField, "direction": Set.orderByDirection}]
+        Set.queryParams["sort"] = Set.orderByDirection + Set.orderByField
         tmpQueryParams = Object.assign({}, Set.queryParams);
-        tmpQueryParams["q"] = JSON.stringify(Set.queryParams["q"])
+        tmpQueryParams["filter[objects]"] = JSON.stringify(Set.queryParams["filter[objects]"])
         Set.loading = true;
         return m.request({
             method: "GET",
             url: baseUrl + "v_sets",
-            params: tmpQueryParams
+            params: tmpQueryParams,
+            headers: {"Accept": "application/vnd.api+json"}
         }).then(res => {
-            Set.list = res.objects
-            Set.numResults = res.num_results
-            Set.page = res.page
-            Set.totalPages = res.total_pages
+            Set.list = res.data
+            Set.list.forEach(e => e.attributes.id = e.id)
+            Set.numResults = res.meta.total
+            Set.page = tmpQueryParams["page[number]"]
+            Set.pageSize = tmpQueryParams["page[size]"]
+            Set.totalPages = Math.trunc(Set.numResults / Set.pageSize) + 1
             Set.loading = false
         })
     },
@@ -39,7 +43,11 @@ var Set = {
         id => {
             Set.loading = true
             Set.actualSet = {}
-            m.request({method: "GET", url: baseUrl + "v_sets/" + id}).then(res => Set.actualSet = res)
+            m.request({
+                method: "GET",
+                url: baseUrl + "v_sets/" + id,
+                headers: {"Accept": "application/vnd.api+json"}
+            }).then(res => Set.actualSet = res.data.attributes)
         }
 }
 
