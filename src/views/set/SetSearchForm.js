@@ -36,7 +36,7 @@ var resetForm = () => {
     state.setState = -1
     state.setTheme = null
     Set.page = 1
-    delete Set.queryParams.q
+    delete Set.queryParams["filter[objects]"]
 }
 
 var generateQuery = () => {

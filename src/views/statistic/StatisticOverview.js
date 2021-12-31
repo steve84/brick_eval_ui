@@ -4,6 +4,22 @@ var Statistic = require("../../models/statistic/Statistic")
 var Theme = require("../../models/theme/Theme")
 
 
+var getRating = (rating) => {
+    color = "red"
+    if (rating > 3) {
+        color = "green"
+    } else if (rating > 2) {
+        color = "yellow"
+    } else if (rating > 1) {
+        color = "orange"
+    }
+    return m("div", {class: "ui " + color + " rating disabled", style: "display: unset"}, [
+        m("i", {"class": "star icon" + (rating >= 1 ? " active" : "")}),
+        m("i", {"class": "star icon" + (rating >= 2 ? " active" : "")}),
+        m("i", {"class": "star icon" + (rating >= 3 ? " active" : "")}),
+        m("i", {"class": "star icon" + (rating >= 4 ? " active" : "")})
+    ])
+}
 
 var StatisticOverview =  {
     oninit: (vnode) => {
@@ -22,7 +38,7 @@ var StatisticOverview =  {
                     if (themeStats) {
                         Statistic.setStat[vnode.state.theme_id] = themeStats.attributes
                     }
-                    overallStats = res.data.find(s => !!s.relationships.theme.data)
+                    overallStats = res.data.find(s => !s.relationships.theme.data)
                     if (!Statistic.setStat.hasOwnProperty(0) && overallStats) {
                         Statistic.setStat[0] = overallStats.attributes
                     }
@@ -34,19 +50,18 @@ var StatisticOverview =  {
 
         }
     },
-    oncreate: () => setTimeout(() => {$('.rating').rating('disable')}, 500),
     view: (vnode) =>  m("div", {class: "ui card", style: "margin-top: 15px"}, m("div", {class: "ui celled list"}, vnode.state.stats && vnode.state.score ? [
         m("div", {class: "item"}, m("div", {class: "content"}, [
             m("div", {class: "header"}, "Gesamt"),
             m("div", [
-                m("div", {class: "ui star rating", "style": "display: unset", "data-rating": Statistic.getScoreQuantil(vnode.state.score,  vnode.state.stats[0]), "data-max-rating": "4"}),
+                getRating(Statistic.getScoreQuantil(vnode.state.score,  vnode.state.stats[0])),
                 m("span", " (" + vnode.state.score.toFixed(4) + ")")
             ])
         ])),
         m("div", {class: "item"}, m("div", {class: "content"}, [
             m("div", {class: "header"}, Theme.lookup.hasOwnProperty(vnode.state.theme_id) ? Theme.lookup[vnode.state.theme_id].fullName : "Thema"),
             m("div", [
-                m("div", {class: "ui star rating", "style": "display: unset", "data-rating": Statistic.getScoreQuantil(vnode.state.score,  vnode.state.stats[vnode.state.theme_id]), "data-max-rating": "4"}),
+                getRating(Statistic.getScoreQuantil(vnode.state.score,  vnode.state.stats[vnode.state.theme_id])),
                 m("span", " (" + vnode.state.score.toFixed(4) + ")")
             ])
         ]))

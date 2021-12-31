@@ -1,5 +1,7 @@
 var m = require("mithril")
 
+var delayTimer;
+
 var CellContent = {
     view: function(vnode) {
         if (vnode.attrs.col.element) {
@@ -32,6 +34,32 @@ var HeaderContent = {
 }
 
 
+var HeaderSearchContent = {
+    view: function(vnode) {
+        var properties = {}
+        if (!vnode.attrs.col.searchable) {
+            return m("th");
+        }
+        properties["oninput"] = (e) => {
+            clearTimeout(delayTimer);
+            delayTimer = setTimeout(() => {
+                vnode.attrs.state.searchInput(vnode.attrs.col.property, e.target.value)
+                vnode.attrs.state.fn()
+            }, 500)
+        }
+        return m("th", properties, m("div", {"class": "ui icon mini input"}, [
+            m("input", {"type": "text", "id": "search_input_" + vnode.attrs.col.property, "size": 10}),
+            m("i", {class: "ban link icon", onclick: () => {
+                clearTimeout(delayTimer);
+                $('#search_input_' + vnode.attrs.col.property)[0].value = ''
+                vnode.attrs.state.searchInput(vnode.attrs.col.property, null)
+                vnode.attrs.state.fn()
+            }})
+        ]))
+    }
+}
+
+
 var PagingElement = {
     view: function(vnode) {
         return m("div", {class: "ui right floated pagination menu"}, [
@@ -56,12 +84,14 @@ var PagingElement = {
     }
 }
 
-var Table =  {
+var Table = {
     oninit: (vnode) => {
         vnode.state.sortable = vnode.attrs.sortable
         vnode.state.pageable = vnode.attrs.pageable
+        vnode.state.searchable = vnode.attrs.searchable
         vnode.state.isLoading = vnode.attrs.isLoading
         vnode.state.getList = vnode.attrs.getList
+        vnode.state.searchInput = vnode.attrs.searchInput
         vnode.state.getNumResults = vnode.attrs.getNumResults
         vnode.state.cols = vnode.attrs.cols
         vnode.state.fn = vnode.attrs.fn
@@ -80,8 +110,10 @@ var Table =  {
     },
     sortable: false,
     pageable: false,
+    searchable: false,
     isLoading: () => true,
     getList: () => {},
+    searchInput: (col, value) => {},
     cols: [],
     setPage: () => {},
     getPage: () => {},
@@ -93,7 +125,7 @@ var Table =  {
     getNumResults: () => {},
     fn: () => {},
     rowStyle: () => {},
-    renderHeaders: (vnode) => m("thead", m("tr", vnode.state.cols.map(col => m(HeaderContent, {"sortable": vnode.state.sortable, "col": col, "state": vnode.state})))),
+    renderHeaders: (vnode) => m("thead", [m("tr", vnode.state.cols.map(col => m(HeaderContent, {"sortable": vnode.state.sortable, "col": col, "state": vnode.state}))), vnode.state.searchable ? m("tr", vnode.state.cols.map(col => m(HeaderSearchContent, {"col": col, "state": vnode.state}))) : null]),
     renderBody: (vnode) => m("tbody", vnode.state.getList().map(row => m("tr", vnode.state.rowStyle ? vnode.state.rowStyle(row.attributes) : {}, vnode.state.cols.map(col => m(CellContent, {"col": col, "row": row.attributes}))))),
     renderFooter: (vnode) => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": vnode.state.cols.length}, [
         vnode.state.pageable ? m(PagingElement, {"state": vnode.state}) :  null,

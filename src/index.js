@@ -3,6 +3,8 @@ var m = require("mithril")
 var SetList = require("./views/set/SetList")
 var SetDetail = require("./views/set/SetDetail")
 var MinifigDetail = require("./views/minifig/MinifigDetail")
+var ScoreList = require("./views/score/ScoreList")
+var PartList = require("./views/part/PartList")
 
 var Statistic = require('./models/statistic/Statistic')
 
@@ -57,6 +59,8 @@ if (mainContainerTag) {
     m.route(mainContainerTag.dom, "/sets", {
         "/sets": SetList,
         "/set/:key": SetDetail,
-        "/minifig/:key": MinifigDetail
+        "/minifig/:key": MinifigDetail,
+        "/scores": ScoreList,
+        "/parts": PartList
     })
 }

@@ -1,5 +1,4 @@
 var m = require("mithril")
-const SetList = require("../../views/set/SetList")
 
 var baseUrl = "http://localhost:5000/api/"
 

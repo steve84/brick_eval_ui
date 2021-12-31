@@ -4,6 +4,14 @@ var baseUrl = "http://localhost:5000/api/"
 
 var Inventory = {
     list: [],
+    numResults: 0,
+    totalPages: 0,
+    page: 1,
+    pageSize: 15,
+    orderByField: "id",
+    orderByDirection: "",
+    loading: false,
+    queryParams: {},
     actualInventory: {},
     getInventoryBySetId: 
         set_id => m.request({

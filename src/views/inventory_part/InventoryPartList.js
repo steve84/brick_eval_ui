@@ -9,7 +9,7 @@ var state = {
     cols: [
         {"name": "Bild", "property": "element_id", "fn": row => m("div", row["element_id"] ? m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["element_id"] + ".jpg/75x75p.jpg"}) : m("span"))},
         {"name": "Name", "property": "name"},
-        {"name": "Teil-Nr.", "property": "part_num"},
+        {"name": "Teile-Nr.", "property": "part_num"},
         {"name": "Material", "property": "part_material"},
         {"name": "Ersatzteil", "property": "is_spare", "fn": row => row["is_spare"] ? "Ja" : "Nein"},
         {"name": "Farbe", "property": "color_name"},
