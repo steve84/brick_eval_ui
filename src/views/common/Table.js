@@ -15,7 +15,7 @@ var CellContent = {
 var HeaderContent = {
     view: function(vnode) {
         var properties = {}
-        if (vnode.attrs.sortable) {
+        if (!vnode.attrs.col.hasOwnProperty("sortable") || !!vnode.attrs.col.sortable) {
             if (vnode.attrs.col.property === vnode.attrs.state.getOrderByField()) {
                 properties["class"] = "sorted " + (vnode.attrs.state.getOrderByDirection() === "-" ? "descending" : "ascending")
             }
@@ -86,7 +86,6 @@ var PagingElement = {
 
 var Table = {
     oninit: (vnode) => {
-        vnode.state.sortable = vnode.attrs.sortable
         vnode.state.pageable = vnode.attrs.pageable
         vnode.state.searchable = vnode.attrs.searchable
         vnode.state.isLoading = vnode.attrs.isLoading
@@ -101,14 +100,13 @@ var Table = {
             vnode.state.getPage = vnode.attrs.getPage
             vnode.state.getTotalPages = vnode.attrs.getTotalPages
         }
-        if (vnode.state.sortable) {
+        if (!!vnode.state.cols.find(c => !c.hasOwnProperty("sortable") || c.sortable)) {
             vnode.state.getOrderByField = vnode.attrs.getOrderByField
             vnode.state.setOrderByField = vnode.attrs.setOrderByField
             vnode.state.getOrderByDirection = vnode.attrs.getOrderByDirection
             vnode.state.setOrderByDirection = vnode.attrs.setOrderByDirection
         }
     },
-    sortable: false,
     pageable: false,
     searchable: false,
     isLoading: () => true,
@@ -125,7 +123,7 @@ var Table = {
     getNumResults: () => {},
     fn: () => {},
     rowStyle: () => {},
-    renderHeaders: (vnode) => m("thead", [m("tr", vnode.state.cols.map(col => m(HeaderContent, {"sortable": vnode.state.sortable, "col": col, "state": vnode.state}))), vnode.state.searchable ? m("tr", vnode.state.cols.map(col => m(HeaderSearchContent, {"col": col, "state": vnode.state}))) : null]),
+    renderHeaders: (vnode) => m("thead", [m("tr", vnode.state.cols.map(col => m(HeaderContent, {"col": col, "state": vnode.state}))), vnode.state.searchable ? m("tr", vnode.state.cols.map(col => m(HeaderSearchContent, {"col": col, "state": vnode.state}))) : null]),
     renderBody: (vnode) => m("tbody", vnode.state.getList().map(row => m("tr", vnode.state.rowStyle ? vnode.state.rowStyle(row.attributes) : {}, vnode.state.cols.map(col => m(CellContent, {"col": col, "row": row.attributes}))))),
     renderFooter: (vnode) => m("tfoot", {class: "full-width"}, m("tr", m("th", {"colspan": vnode.state.cols.length}, [
         vnode.state.pageable ? m(PagingElement, {"state": vnode.state}) :  null,
@@ -134,7 +132,7 @@ var Table = {
     view: (vnode) => [
         m("div", {class: "ui segment", style: "border: none; box-shadow: none; padding: unset"}, [
             m("div", {class: "ui " + (vnode.state.isLoading() ? "active" : "disabled") + " dimmer"}, m("div", {class: "ui " + (vnode.state.isLoading() ? "" : "disabled") + " text loader"}, "Lädt...")),
-            m("table", {class: "ui striped sortable celled table"}, [
+            m("table", {class: (!!vnode.state.cols.find(c => !c.hasOwnProperty("sortable") || c.sortable)) ? "ui striped sortable celled table" : "ui striped celled table"}, [
                 vnode.state.renderHeaders(vnode),
                 vnode.state.renderBody(vnode),
                 vnode.state.renderFooter(vnode)

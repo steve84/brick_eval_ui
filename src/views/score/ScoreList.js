@@ -51,7 +51,6 @@ var ScoreList =  {
     view: (vnode) => [
         m(ScoreSearchForm),
         m(Table, {
-            "sortable": true,
             "pageable": true,
             "isLoading": () => Score.loading,
             "getList": () => Score.list,

@@ -23,7 +23,6 @@ var PartList =  {
     },
     view: (vnode) => [
         m(Table, {
-            "sortable": true,
             "pageable": true,
             "searchable": true,
             "isLoading": () => Part.loading,

@@ -7,7 +7,7 @@ var Table = require("../common/Table")
 
 var state = {
     cols: [
-        {"name": "Bild", "property": "element_id", "fn": row => m("div", row["element_id"] ? m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["element_id"] + ".jpg/75x75p.jpg"}) : m("span"))},
+        {"name": "Bild", "property": "element_id", "sortable": false, "fn": row => m("div", row["element_id"] ? m("img", {class: "ui rounded image", src: "https://cdn.rebrickable.com/media/thumbs/parts/elements/" + row["element_id"] + ".jpg/75x75p.jpg"}) : m("span"))},
         {"name": "Name", "property": "name"},
         {"name": "Teile-Nr.", "property": "part_num"},
         {"name": "Material", "property": "part_material"},
@@ -30,7 +30,6 @@ var InventoryPartList =  {
     },
     view: () => [
         m(Table, {
-            "sortable": true,
             "pageable": true,
             "isLoading": () => InventoryPart.loading,
             "getList": () => InventoryPart.list,

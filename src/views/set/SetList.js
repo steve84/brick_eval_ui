@@ -11,12 +11,13 @@ var state = {
         {"name": "Set-Name", "property": "name"},
         {"name": "Anzahl Teile", "property": "num_parts"},
         {"name": "Jahr", "property": "year_of_publication"},
+        {"name": "Mit Stickern", "property": "has_stickers", "sortable": false, "fn": row => row.has_stickers ? "Ja" : "Nein"},
         {"name": "Thema", "property": "theme"},
         {"name": "Basis-Thema", "property": "root_theme"},
         {"name": "Verkaufspreis", "property": "retail_price", "fn": (row) => row["retail_price"] ? (row["retail_price"] / 100).toFixed(2) : ""},
         {"name": "EOL", "property": "eol"},
         {"name": "Bewertung", "property": "score", "fn": (row) => row["score"] ? row["score"].toFixed(4) : ""},
-        {"name": "Details", "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/set/' + row.id}, "Details"))},
+        {"name": "Details", "sortable": false, "element": (row) => m("div", m(m.route.Link, {selector: "button", class: "mini ui secondary button", href: '/set/' + row.id}, "Details"))},
     ]
 }
 
@@ -25,7 +26,6 @@ var SetList =  {
     view: () => [
         m(SetSearchForm),
         m(Table, {
-            "sortable": true,
             "pageable": true,
             "isLoading": () => Set.loading,
             "getList": () => Set.list,

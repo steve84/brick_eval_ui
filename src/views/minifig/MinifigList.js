@@ -13,7 +13,7 @@ var MinifigList =  {
             {"name": "Anzahl Teile", "property": "minifig.num_parts"},
             {"name": "Häufigkeit pro Set", "property": "quantity"},
             {"name": "Bewertung", "property": "score.score", "fn": (row) => row["score"] ? row["score"]["score"].toFixed(4) : ""},
-            {"name": "Details", "element": (row) => m("div", m(m.route.Link, {
+            {"name": "Details", "sortable": false, "element": (row) => m("div", m(m.route.Link, {
                 selector: "button",
                 class: "mini ui secondary button",
                 href: '/minifig/' + row.id,
@@ -28,7 +28,6 @@ var MinifigList =  {
         }
     },
     view: (vnode) => m(Table, {
-        "sortable": true,
         "pageable": true,
         "isLoading": () => InventoryMinifig.loading,
         "getList": () => InventoryMinifig.list,

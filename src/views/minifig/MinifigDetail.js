@@ -23,12 +23,11 @@ var PropertyList = {
 var ScoreList = {
     view: function(vnode) {
         var cols = [
-            {"name": "Bewertung", "property": "score", "fn": (row) => row["score"].toFixed(4)},
-            {"name": "Berechnungsdatum", "property": "calc_date", "fn": row => row["calc_date"] ? new Date(row["calc_date"]).toLocaleDateString() : ""},
+            {"name": "Bewertung", "property": "score", "sortable": false, "fn": (row) => row["score"].toFixed(4)},
+            {"name": "Berechnungsdatum", "property": "calc_date", "sortable": false, "fn": row => row["calc_date"] ? new Date(row["calc_date"]).toLocaleDateString() : ""},
         ]
         if (vnode.attrs.scores) {
             return m(Table, {
-                "sortable": false,
                 "pageable": false,
                 "isLoading": () => false,
                 "getList": () => vnode.attrs.scores,
