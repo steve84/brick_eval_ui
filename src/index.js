@@ -9,6 +9,10 @@ var PartList = require("./views/part/PartList")
 var Statistic = require('./models/statistic/Statistic')
 
 
+var appState = {
+    activeRoute: window.location.hash.split('/').pop()
+}
+
 var q = [
     {
         "or": [
@@ -23,9 +27,21 @@ Statistic.getMinifigStatistics()
 
 m.render(document.body, [
     m("nav", m("div", {class: "ui menu"}, [
-        m(m.route.Link, {class: "active item", href: '/v_sets'}, "Sets"),
-        m(m.route.Link, {class: "item", href: '/scores'}, "Bewertungen"),
-        m(m.route.Link, {class: "item", href: '/parts'}, "Teile"),
+        m(m.route.Link, {class: (appState && appState.activeRoute == 'sets' ? "active " : "") + "item", href: '/sets', onclick: e => {
+            $('a.active.item').first().removeClass('active')
+            $(e.srcElement).addClass('active')
+            appState.activeRoute = 'sets'
+        }}, "Sets"),
+        m(m.route.Link, {class: (appState && appState.activeRoute === 'scores' ? "active " : "") + "item", href: '/scores', onclick: e => {
+            $('a.active.item').first().removeClass('active')
+            $(e.srcElement).addClass('active')
+            appState.activeRoute = 'scores'
+        }}, "Bewertungen"),
+        m(m.route.Link, {class: (appState && appState.activeRoute === 'parts' ? "active " : "") + "item", href: '/parts', onclick: e => {
+            $('a.active.item').first().removeClass('active')
+            $(e.srcElement).addClass('active')
+            appState.activeRoute = 'parts'
+        }}, "Teile"),
         m("div", {class: "right menu"}, m("div", {class: "item"}, m("div", {class: "ui search", "id": "set_search"}, [
             m("div", {class: "ui icon input"}, [
                 m("input", {type: "text", "placeholder": "Suche...", class: "prompt"}),
