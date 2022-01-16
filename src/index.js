@@ -3,6 +3,7 @@ var m = require("mithril")
 var SetList = require("./views/set/SetList")
 var SetDetail = require("./views/set/SetDetail")
 var MinifigDetail = require("./views/minifig/MinifigDetail")
+var MinifigSimilarityList = require("./views/minifig/MinifigSimilarityList")
 var ScoreList = require("./views/score/ScoreList")
 var PartList = require("./views/part/PartList")
 
@@ -42,6 +43,11 @@ m.render(document.body, [
             $(e.srcElement).addClass('active')
             appState.activeRoute = 'parts'
         }}, "Teile"),
+        m(m.route.Link, {class: (appState && appState.activeRoute === 'minifigs_similarity' ? "active " : "") + "item", href: '/minifigs_similarity', onclick: e => {
+            $('a.active.item').first().removeClass('active')
+            $(e.srcElement).addClass('active')
+            appState.activeRoute = 'minifigs_similarity'
+        }}, "Ähnliche Figuren"),
         m("div", {class: "right menu"}, m("div", {class: "item"}, m("div", {class: "ui search", "id": "set_search"}, [
             m("div", {class: "ui icon input"}, [
                 m("input", {type: "text", "placeholder": "Suche...", class: "prompt"}),
@@ -76,6 +82,7 @@ if (mainContainerTag) {
         "/sets": SetList,
         "/set/:key": SetDetail,
         "/minifig/:key": MinifigDetail,
+        "/minifigs_similarity": MinifigSimilarityList,
         "/scores": ScoreList,
         "/parts": PartList
     })
