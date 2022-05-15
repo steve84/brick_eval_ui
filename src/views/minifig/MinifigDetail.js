@@ -40,16 +40,10 @@ var ScoreList = {
 
 var ImageElement = {
     view: function(vnode) {
-        if (vnode.attrs.data && vnode.attrs.data.set) {
-            return [
-                m("div", {class: "ui slide masked reveal image" }, [
-                    //m("img", {class: "visible content", src: 'https://img.bricklink.com/ItemImage/ON/0/' + Inventory.actualInventory.set.set_num + '.png'}),
-                    //m("img", {class: "hidden content", src: 'https://img.bricklink.com/ItemImage/SN/0/' + Inventory.actualInventory.set.set_num + '.png'}),
-                ]),
-                m("div", {class: "ui slide masked reveal image" }, m("div", {class: "extra content"}, "2 Bilder"))
-            ]
+        if (vnode.attrs.data && vnode.attrs.data.fig_num) {
+            return m("img", {src: 'https://cdn.rebrickable.com/media/sets/' + vnode.attrs.data.fig_num + (vnode.attrs.data.rebrickable_id ? ('/' + vnode.attrs.data.rebrickable_id) : '') + '.jpg'})
         } 
-        return []
+        return m("span")
     }
 }
 
@@ -67,7 +61,8 @@ var MinifigDetail =  {
         InventoryMinifig.actualInventoryMinifig = {}
         InventoryMinifig.getInventoryMinifigById(vnode.attrs.key)},
     view: (vnode) => m("div", {class: "ui two column grid"}, [
-        m("div", {class: "sixteen wide column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": InventoryMinifig.actualInventoryMinifig})))),
+        m("div", {class: "twelve wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m("div", {class: "ui definition table"}, m(PropertyList, {"cols": vnode.state.cols, "data": InventoryMinifig.actualInventoryMinifig})))),
+        m("div", {class: "four wide computer sixteen wide tablet column"}, m("div", {class: "ui card", style: "width: 100%; margin-top: 15px"}, m(ImageElement, {data: InventoryMinifig.actualInventoryMinifig && InventoryMinifig.actualInventoryMinifig.minifig ? InventoryMinifig.actualInventoryMinifig.minifig : {}}))),
         m("div", {class: "sixteen wide column"}, InventoryMinifig.actualInventoryMinifig && InventoryMinifig.actualInventoryMinifig.inventory_id ? m(InventoryPartList, {"inventory_id": InventoryMinifig.actualInventoryMinifig.inventory_id}) : m("div")),
         m(m.route.Link, {selector: "button", class: "mini ui primary button", href: vnode.state.backlink}, "Zurück")
     ])
