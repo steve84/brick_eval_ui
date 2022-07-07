@@ -63,7 +63,8 @@ var SetDetail =  {
             {"name": "Set-Name", "property": "name"},
             {"name": "Anzahl Teile", "property": "num_parts"},
             {"name": "Jahr", "property": "year_of_publication"},
-            {"name": "Thema", "property": "theme_id", "fn": (id) => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
+            {"name": "Mit Stickern", "property": "has_stickers", "fn": row => row.has_stickers ? "Ja" : "Nein"},
+            {"name": "Thema", "property": "theme_id", "fn": id => Theme.lookup.hasOwnProperty(id) ? Theme.lookup[id].fullName.replaceAll(";", " / ") : ""},
             {"name": "Verkaufspreis", "property": "retail_price", "fn": val => val ? (val / 100).toFixed(2) : ""},
             {"name": "EOL", "property": "eol"},
         ]
