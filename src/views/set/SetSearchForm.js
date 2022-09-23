@@ -56,16 +56,14 @@ var generateQuery = () => {
     if (state.priceFrom) {
         query.push(
             {"or": [
-                {"name": "retail_price", "op": "is_null"},
-                {"name": "retail_price", "op": ">=", "val": state.priceFrom}
+                {"name": "retail_price", "op": ">=", "val": 100 * state.priceFrom}
             ]}
         )
     }
     if (state.priceTo) {
         query.push(
             {"or": [
-                {"name": "retail_price", "op": "is_null"},
-                {"name": "retail_price", "op": "<=", "val": state.priceTo}
+                {"name": "retail_price", "op": "<=", "val": 100 *state.priceTo}
             ]}
         )
     }

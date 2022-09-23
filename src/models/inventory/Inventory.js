@@ -1,5 +1,7 @@
 var m = require("mithril")
 
+var JsonUtil = require("../../utils/JsonUtil")
+
 var baseUrl = "http://localhost:5000/api/"
 
 var Inventory = {
@@ -23,25 +25,12 @@ var Inventory = {
             },
             headers: {"Accept": "application/vnd.api+json"}
         }).then(res => {
-            Inventory.actualInventory = res.data[0]
-            set_id = Inventory.actualInventory.relationships.set.data.id
-            set_attrs = res.included.find(i => i.type === "sets" && i.id === set_id)
+            enriched_resp = JsonUtil.enrichResponse(res)
+            Inventory.actualInventory = enriched_resp.data[0]
+            set_attrs = enriched_resp.included.find(i => i.type === "sets" && i.id === Inventory.actualInventory.attributes.set.id)
             if (set_attrs) {
-                Inventory.actualInventory.attributes.set = set_attrs.attributes
                 Inventory.actualInventory.attributes.set.theme_id = set_attrs.relationships.theme.data.id
                 Inventory.actualInventory.attributes.set.root_theme_id = set_attrs.relationships.root_theme.data.id
-                Inventory.actualInventory.attributes.set.score_id = set_attrs.relationships.score.data ? set_attrs.relationships.score.data.id : null
-            }
-            if (Inventory.actualInventory.relationships.scores.data) {
-                score_ids = Inventory.actualInventory.relationships.scores.data.map(e => e.id)
-                scores = res.included.filter(i => i.type === "scores" && score_ids.find(e => e === i.id)).map(e => {
-                    obj = e.attributes
-                    obj.id = e.id
-                    return obj
-                })
-                if (scores) {
-                    Inventory.actualInventory.attributes.scores = scores
-                }
             }
         })
 }

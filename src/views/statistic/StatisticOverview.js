@@ -1,5 +1,8 @@
 var m = require("mithril")
 
+var JsonUtil = require("../../utils/JsonUtil")
+var MiscUtil = require("../../utils/MiscUtil")
+
 var Statistic = require("../../models/statistic/Statistic")
 var Theme = require("../../models/theme/Theme")
 
@@ -24,13 +27,13 @@ var getRating = (rating) => {
 var StatisticOverview =  {
     oninit: (vnode) => {
         vnode.state.is_minifig = vnode.attrs.is_minifig
-        if (vnode.attrs.inventory && vnode.attrs.inventory.attributes && vnode.attrs.inventory.attributes.set) {
-            vnode.state.theme_id = vnode.attrs.inventory.attributes.set.theme_id
-            if (vnode.attrs.inventory.attributes.scores && vnode.attrs.inventory.attributes.scores.length > 0) {
-                vnode.state.score = vnode.attrs.inventory.attributes.scores.find(s => s.id == vnode.attrs.inventory.attributes.set.score_id)
-                vnode.state.score = vnode.state.score ? vnode.state.score.score : null
+        if (MiscUtil.hasPropertyPath(vnode, "attrs.inventory.attributes.set")) {
+            vnode.state.theme_id = vnode.attrs.inventory.attributes.set.root_theme_id
+            if (MiscUtil.hasPropertyPath(vnode, "attrs.inventory.attributes.scores") && vnode.attrs.inventory.attributes.scores.length > 0) {
+                vnode.state.score = vnode.attrs.inventory.attributes.scores.sort((a, b) => new Date(b.calc_date) - new Date(a.calc_date))[0].score
             }
         }
+
         if (vnode.state.theme_id) {
             if (Statistic.setStat && !Statistic.setStat.hasOwnProperty(vnode.state.theme_id)) {
                 Statistic.getSetStatistics(vnode.state.theme_id).then(res => {
