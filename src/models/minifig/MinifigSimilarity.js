@@ -7,7 +7,7 @@ var MinifigSimilarity = {
     numResults: 0,
     totalPages: 0,
     page: 1,
-    pageSize: 5,
+    pageSize: 15,
     orderByField: "similarity",
     orderByDirection: "-",
     loading: false,

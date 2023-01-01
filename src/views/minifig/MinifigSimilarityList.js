@@ -2,22 +2,23 @@ var m = require("mithril")
 var MinifigSimilarity = require("../../models/minifig/MinifigSimilarity")
 
 var Table = require("../common/Table")
+var MinifigSimilaritySearchForm = require("./MinifigSimilaritySearchForm")
 
 var MinifigSimilarityList =  {
     oninit: (vnode) => {
         vnode.state.cols = [
             {"name": "Figur 1", "property": "rebrickable_id_minifig_1", "fn": row => !row["rebrickable_id_minifig_1"] ? m("span") : m("img", {
-                class: "ui small rounded image",
+                class: "ui tiny rounded image hoverable",
                 title: row["num_minifig_1"],
                 src: "https://cdn.rebrickable.com/media/sets/" + row["num_minifig_1"] + (row["rebrickable_id_minifig_1"] ? ('/' + row["rebrickable_id_minifig_1"]) : '') + '.jpg'})
             },
             {"name": "Ähnlichkeit", "property": "similarity", "fn": row => row["similarity"] ? (row["similarity"] * 100).toFixed(0) : ""},
             {"name": "Figur 2", "property": "rebrickable_id_minifig_2", "fn": row => !row["rebrickable_id_minifig_2"] ? m("span") : m("img", {
-                class: "ui small rounded image",
+                class: "ui tiny rounded image hoverable",
                 title: row["num_minifig_2"],
                 src: "https://cdn.rebrickable.com/media/sets/" + row["num_minifig_2"] + (row["rebrickable_id_minifig_2"] ? ('/' + row["rebrickable_id_minifig_2"]) : '') + '.jpg'})
             },
-            {"name": "Name F1", "property": "name_minifig_1", "searchable": true, "fn": row => m("span", row["name_minifig_1"] + " / " + row["name_minifig_2"])},
+            {"name": "Name F1", "property": "name_minifig_1", "searchable": true, "fn": row => m("span", row["name_minifig_1"].substring(0, 20) + "... (" + row["num_minifig_1"] + ") / " + row["name_minifig_2"].substring(0, 20) + "... (" + row["num_minifig_2"] + ")")},
             {"name": "Thema F1", "property": "theme_minifig_1", "searchable": true, "fn": row => m("span", row["theme_minifig_1"] + " / " + row["theme_minifig_2"])},
             {"name": "Min. Set ratio", "property": "min_set_parts_minifig_1", "fn": row => m("span", {title: row["min_set_parts_minifig_1"] + " / " + row["min_set_parts_minifig_2"]}, (row["min_set_parts_minifig_1"] / row["min_set_parts_minifig_2"]).toFixed(4))},
             {"name": "Score ratio", "property": "score_minifig_1", "fn": row => m("span", {title: row["score_minifig_1"].toFixed(4) + " / " + row["score_minifig_2"].toFixed(4)}, (row["score_minifig_1"] / row["score_minifig_2"]).toFixed(4))},
@@ -46,37 +47,40 @@ var MinifigSimilarityList =  {
         ]
         MinifigSimilarity.getMinfigSimilarities()
     },
-    view: (vnode) => m(Table, {
-        "pageable": true,
-        "searchable": true,
-        "isLoading": () => MinifigSimilarity.loading,
-        "getList": () => MinifigSimilarity.list,
-        "searchInput": (col, value) => {
-            MinifigSimilarity.loading = true
-            index = MinifigSimilarity.queryParams["filter[objects]"].findIndex(e => e.name === col)
-            val = value ? value.split(' ').filter(e => e.length > 0).join('%') : null
-            if (index > -1) {
-                if (!!val) {
-                    MinifigSimilarity.queryParams["filter[objects]"][index] = {name: col, "op": "ilike", "val": "%" + val + "%"}
+    view: (vnode) => [
+        m(MinifigSimilaritySearchForm),
+        m(Table, {
+            "pageable": true,
+            "searchable": true,
+            "isLoading": () => MinifigSimilarity.loading,
+            "getList": () => MinifigSimilarity.list,
+            "searchInput": (col, value) => {
+                MinifigSimilarity.loading = true
+                index = MinifigSimilarity.queryParams["filter[objects]"].findIndex(e => e.name === col)
+                val = value ? value.split(' ').filter(e => e.length > 0).join('%') : null
+                if (index > -1) {
+                    if (!!val) {
+                        MinifigSimilarity.queryParams["filter[objects]"][index] = {name: col, "op": "ilike", "val": "%" + val + "%"}
+                    } else {
+                        MinifigSimilarity.queryParams["filter[objects]"].splice(index, 1)
+                    }
                 } else {
-                    MinifigSimilarity.queryParams["filter[objects]"].splice(index, 1)
+                    MinifigSimilarity.queryParams["filter[objects]"].push({name: col, "op": "ilike", "val": "%" + val + "%"})
                 }
-            } else {
-                MinifigSimilarity.queryParams["filter[objects]"].push({name: col, "op": "ilike", "val": "%" + val + "%"})
-            }
-            MinifigSimilarity.page = 1
-        },
-        "getNumResults": () => MinifigSimilarity.numResults,
-        "fn": () => MinifigSimilarity.getMinfigSimilarities(),
-        "cols": vnode.state.cols,
-        "setPage": (page) => MinifigSimilarity.page = page,
-        "getPage": () => MinifigSimilarity.page,
-        "getTotalPages": () => MinifigSimilarity.totalPages,
-        "getOrderByField": () => MinifigSimilarity.orderByField,
-        "setOrderByField": (field) => MinifigSimilarity.orderByField = field,
-        "getOrderByDirection": () => MinifigSimilarity.orderByDirection,
-        "setOrderByDirection": (direction) => MinifigSimilarity.orderByDirection = direction
-    })
+                MinifigSimilarity.page = 1
+            },
+            "getNumResults": () => MinifigSimilarity.numResults,
+            "fn": () => MinifigSimilarity.getMinfigSimilarities(),
+            "cols": vnode.state.cols,
+            "setPage": (page) => MinifigSimilarity.page = page,
+            "getPage": () => MinifigSimilarity.page,
+            "getTotalPages": () => MinifigSimilarity.totalPages,
+            "getOrderByField": () => MinifigSimilarity.orderByField,
+            "setOrderByField": (field) => MinifigSimilarity.orderByField = field,
+            "getOrderByDirection": () => MinifigSimilarity.orderByDirection,
+            "setOrderByDirection": (direction) => MinifigSimilarity.orderByDirection = direction
+        })
+    ]
 }
 
 module.exports = MinifigSimilarityList

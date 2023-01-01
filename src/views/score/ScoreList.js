@@ -24,6 +24,10 @@ var getRating = (rating) => {
 var ScoreList =  {
     oninit: (vnode) => {
         vnode.state.cols = [
+            {"name": "", element: row => m("img", {
+                src: row["is_set"] ? "https://img.bricklink.com/ItemImage/SN/0/" + row["num"] + '.png' : 'https://cdn.rebrickable.com/media/sets/' + row["num"] + (row["img_id"] ? ('/' + row["img_id"]) : '') + '.jpg',
+                class: "ui tiny image hoverable"
+            })},
             {"name": "Name", "property": "name"},
             {"name": "Nummer", "property": "num"},
             {"name": "Jahr", "property": "year_of_publication"},
