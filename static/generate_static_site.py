@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import unicodedata
 import re
+import requests
+
+from pathlib import Path
 
 def slugify(value, allow_unicode=False):
     value = str(value)
@@ -13,8 +16,22 @@ def slugify(value, allow_unicode=False):
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
+def download(url, filename, always=False):
+    if not always and Path(filename).is_file():
+        return
+    get_response = requests.get(url, stream=True)
+    with open(filename, 'wb') as f:
+        for chunk in get_response.iter_content(chunk_size=1024):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)
+
+
+def createFolder(path):
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+
 def generateMenu(activeItem: str) -> str:
-    html = '<div class="ui five item menu">'
+    html = '<div class="ui menu">'
     for item in menu:
         html += '<a class="%sitem" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', item['href'], item['name'])
     html += '</div>'
@@ -29,7 +46,7 @@ def generateFooter():
     return html
 
 
-def createSnippet(title, snippet_name, outfile):
+def createSnippet(title, header, snippet_name, outfile):
     base_template = ''
     with open('templates/base_template.html', 'r') as file:
         base_template = file.read()
@@ -39,7 +56,7 @@ def createSnippet(title, snippet_name, outfile):
         snippet = file.read()
     
     with open(output_folder % outfile, 'w', encoding='utf-8') as file:
-        file.write(base_template.format(title, generateMenu(title), snippet, generateFooter()))
+        file.write(base_template.format(title, generateMenu(title), header, snippet, generateFooter()))
 
 
 # select
@@ -72,77 +89,14 @@ def createSnippet(title, snippet_name, outfile):
 # where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null
 # order by sc.rating desc, m.has_unique_part desc, scs.rating desc, scs.score desc;
 
-
-# figure_card = """
-# <div class="ui card">
-#     <div class="image">
-#         <img src="%(minifig_img_link)s">
-#     </div>
-#     <div class="content">
-#         %(minifig_rating)s
-#         %(is_exclusive)s
-#         <div class="header">
-#             <br />
-#             %(fig_name)s
-#         </div>
-#         <div class="meta">
-#             %(theme_name)s / %(root_theme_name)s
-#         </div>
-#         <div class="description">
-#             <div class="ui divided list">
-#                 <div class="item">
-#                     <div class="header">Set-Bewertung</div>
-#                     %(set_rating)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Set-Nummer</div>
-#                     %(set_num)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Preis</div>
-#                     %(set_price)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Status</div>
-#                     %(eol)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Set Bezeichnung</div>
-#                     %(set_name)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Anzahl Teile</div>
-#                     %(num_parts)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Figure pro Set</div>
-#                     %(quantity)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Erscheinungsjahr</div>
-#                     %(year_of_publication)s
-#                 </div>
-#                 <div class="item">
-#                     <div class="header">Aufkleber</div>
-#                     %(has_stickers)s
-#                 </div>
-#             </div>
-#         </div>
-#     </div>
-#     <div class="extra content">
-#         <div class="ui list">     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">ffffffffLego.ch</a>             <div class="description">123.-</div>         </div>     </div>     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">Lego.ch</a>             <div class="description">123.-</div>         </div>     </div>     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">dftwLego.ch</a>             <div class="description">123.-</div>         </div>     </div> </div>
-#     </div>
-# </div>
-# """.replace('\n',' ')
-
-
-
 output_folder = 'public/%s'
+rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
 
 menu = [
     {'name': 'Home', 'href': 'index.html'},
     {'name': 'Figuren', 'href': 'figures.html'},
-    {'name': 'Über', 'href': 'about.html'}
+    {'name': 'Über', 'href': 'about.html'},
+    {'name': 'Wissenswerten', 'href': 'wiki.html'}
 ]
 
 footer = [
@@ -163,13 +117,22 @@ generate_unique_icon = lambda x: '<i class="right floated orange gem icon"></i>'
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
 
+df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
+
+download('https://rebrickable.com/static/img/nil_mf.jpg', 'public/static/images/nil_mf.jpg')
+
+for subpath in df[~df['filename'].isna()]['filename']:
+    folder, filename = subpath.split('/')
+    createFolder('public/static/images/%s' % folder)
+    download((rebrickable_img_url + '%s') % subpath, 'public/static/images/%s/%s' % (folder, filename))
+
 
 figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
     figure_card = file.read()
 
 df['figure_card'] = df.apply(lambda x: figure_card % {
-    'minifig_img_link': x['minifig_img_link'],
+    'minifig_img_link': 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg',
     'minifig_rating': generate_rating(x['rating']),
     'is_exclusive': generate_unique_icon(x['has_unique_part']),
     'fig_name': x['fig_name'],
@@ -189,10 +152,11 @@ df['figure_card'] = df.apply(lambda x: figure_card % {
 df['year_of_publication'] = df['year_of_publication'].astype(object)
 
 
-createSnippet('Über', 'about', 'about.html')
-createSnippet('Home', 'home', 'index.html')
-createSnippet('Impressum', 'impressum', 'impressum.html')
-createSnippet('Datenschutz', 'privacy', 'privacy.html')
+createSnippet('Über', 'Über', 'about', 'about.html')
+createSnippet('Home', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
+createSnippet('Wissenswertes', 'Wissenswertes', 'wiki', 'wiki.html')
+createSnippet('Impressum', 'Impressum', 'impressum', 'impressum.html')
+createSnippet('Datenschutz', 'Datenschutz', 'privacy', 'privacy.html')
 
 base_template = ''
 with open('templates/base_template.html', 'r') as file:
@@ -214,7 +178,7 @@ with open(output_folder % 'figures.html', 'w', encoding='utf-8') as file:
 
     figure_label += '</div>'
 
-    file.write(base_template.format('Figuren - Top 200', generateMenu('Figuren'), figure_label + figure_cards, generateFooter()))
+    file.write(base_template.format('Figuren - Top 200', generateMenu('Figuren'), 'Figuren - Top 200', figure_label + figure_cards, generateFooter()))
 
 
 for theme in df['root_theme_name'].unique():
@@ -234,25 +198,7 @@ for theme in df['root_theme_name'].unique():
         
         figure_label += '</div>'
 
-        file.write(base_template.format('Figuren - %s' % theme, generateMenu('Figuren'), figure_label + figure_cards, generateFooter()))
+        file.write(base_template.format('Figuren - %s' % theme, generateMenu('Figuren'), 'Figuren - %s' % theme, figure_label + figure_cards, generateFooter()))
 
 
-# with open('figure_cards.html', 'w') as file:
-#     file.writelines('<div class="ui five stackable cards">')
-#     for val in df['figure_card'].head(200).to_list():
-#         file.writelines(val)
-    
-#     file.writelines('</div>')
-
-# figure_menu = '<div class="ui basic labels"><a class="ui label">Top<div class="detail">200</div></a>'
-# for theme in df['root_theme_name'].unique():
-#     html_filename = slugify('figure-cards-%s' % theme.lower()) + '.html'
-#     df_tmp = df[df['root_theme_name'] == theme]
-#     figure_menu += '<a class="ui label" href="./figures/%s">%s<div class="detail">%d</div></a>' % (html_filename, theme, len(df_tmp))
-#     with open(html_filename, 'w') as file:
-#         file.writelines(df_tmp['figure_card'])
-    
-# figure_menu += '</div>'
-# with open('figure_menu.html', 'w') as file:
-#     file.write(figure_menu)
         

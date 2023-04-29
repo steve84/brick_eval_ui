@@ -103,3 +103,6 @@ bin
 
 # TernJS port file
 .tern-port
+
+static/public
+static/*.csv
