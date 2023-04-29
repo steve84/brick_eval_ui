@@ -1,6 +1,6 @@
 <div class="ui card">
     <div class="image">
-        <img src="%(minifig_img_link)s">
+        <img alt="%(fig_name)s (%(theme_name)s / %(root_theme_name)s)" src="%(minifig_img_link)s">
     </div>
     <div class="content">
         %(minifig_rating)s
@@ -15,7 +15,7 @@
         <div class="description">
             <div class="ui divided list">
                 <div class="item">
-                    <div class="header">Set-Bewertung</div>
+                    <div class="header">Set-Bewertung <i class="circular small help icon" title="Set-Bewertung"></i></div>
                     %(set_rating)s
                 </div>
                 <div class="item">
@@ -24,10 +24,10 @@
                 </div>
                 <div class="item">
                     <div class="header">Preis</div>
-                    %(set_price)s
+                    CHF %(set_price)s
                 </div>
                 <div class="item">
-                    <div class="header">Status</div>
+                    <div class="header">Status <i class="circular small help icon" title="Set-Status"></i></div>
                     %(eol)s
                 </div>
                 <div class="item">
@@ -54,6 +54,28 @@
         </div>
     </div>
     <div class="extra content">
-        <div class="ui list">     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">ffffffffLego.ch</a>             <div class="description">123.-</div>         </div>     </div>     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">Lego.ch</a>             <div class="description">123.-</div>         </div>     </div>     <div class="item">         <img class="ui mini image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png" />         <div class="content">             <a class="header" href="https://www.lego.com/de-ch">dftwLego.ch</a>             <div class="description">123.-</div>         </div>     </div> </div>
+        <div class="ui list">
+            <div class="item">
+                <img class="ui mini image" alt="Link %(set_name)s Lego.com" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png"/>
+                <div class="content">
+                    <a class="header" href="https://www.lego.com/de-ch">ffffffffLego.ch</a>
+                    <div class="description">123.-</div>
+                </div>
+            </div>
+            <div class="item">
+                <img class="ui mini image" alt="Link %(set_name)s Lego.com" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png"/>
+                <div class="content">
+                    <a class="header" href="https://www.lego.com/de-ch">Lego.ch</a>
+                    <div class="description">123.-</div>
+                </div>
+            </div>
+            <div class="item">
+                <img class="ui mini image" alt="Link %(set_name)s Lego.com" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png"/>
+                <div class="content">
+                    <a class="header" href="https://www.lego.com/de-ch">dftwLego.ch</a>
+                    <div class="description">123.-</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

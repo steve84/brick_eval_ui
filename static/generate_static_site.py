@@ -32,16 +32,20 @@ def createFolder(path):
 
 def generateMenu(activeItem: str) -> str:
     html = '<div class="ui menu">'
+    i = 1
     for item in menu:
-        html += '<a class="%sitem" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', item['href'], item['name'])
+        html += '<a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+        i += 1
     html += '</div>'
     return html
 
 
 def generateFooter():
     html = '<div class="ui horizontal list">'
+    i = len(menu) + 1
     for item in footer:
-        html += '<a class="item" href="%s">%s</a>' % (item['href'], item['name'])
+        html += '<a class="item" tabindex="%d" href="%s">%s</a>' % (i, item['href'], item['name'])
+        i += 1
     html += '</div>'
     return html
 
@@ -86,8 +90,7 @@ def createSnippet(title, header, snippet_name, outfile):
 # left join themes rt on rt.id = s.root_theme_id
 # left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
 # left join set_prices sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null
-# order by sc.rating desc, m.has_unique_part desc, scs.rating desc, scs.score desc;
+# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
@@ -96,7 +99,7 @@ menu = [
     {'name': 'Home', 'href': 'index.html'},
     {'name': 'Figuren', 'href': 'figures.html'},
     {'name': 'Über', 'href': 'about.html'},
-    {'name': 'Wissenswerten', 'href': 'wiki.html'}
+    {'name': 'Wissenswertes', 'href': 'wiki.html'}
 ]
 
 footer = [
@@ -112,10 +115,12 @@ eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet'}
 get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating else ''
 
 generate_rating = lambda x: '<div class="ui %s rating disabled">%s</div>' % (get_star_color(x), ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)]))
-generate_unique_icon = lambda x: '<i class="right floated orange gem icon"></i>' if x else ''
+generate_unique_icon = lambda x: '<i class="right floated orange gem icon" title="Figur besitzt mindestens ein exklusives Teil"></i>' if x else ''
 
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
+
+df = df.sort_values(by=['has_unique_part', 'rating', 'set_price'], ascending=[False, False, True])
 
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 
@@ -170,7 +175,7 @@ with open(output_folder % 'figures.html', 'w', encoding='utf-8') as file:
     
     figure_cards += '</div>'
 
-    figure_label = '<div class="ui basic labels"><a class="ui olive label">Top<div class="detail">200</div></a>'
+    figure_label = '<div class="ui basic labels" style="padding-bottom: 15px"><a class="ui olive label" href="figures.html">Top<div class="detail">200</div></a>'
     for theme in df['root_theme_name'].unique():
         html_filename = slugify('figure-cards-%s' % theme.lower()) + '.html'
         df_tmp = df[df['root_theme_name'] == theme]
@@ -182,7 +187,7 @@ with open(output_folder % 'figures.html', 'w', encoding='utf-8') as file:
 
 
 for theme in df['root_theme_name'].unique():
-    figure_label = '<div class="ui basic labels"><a class="ui label" href="figures.html">Top<div class="detail">200</div></a>'
+    figure_label = '<div class="ui basic labels" style="padding-bottom: 15px"><a class="ui label" href="figures.html">Top<div class="detail">200</div></a>'
     figure_cards = '<div class="ui five stackable cards">'
     html_filename = slugify('figure-cards-%s' % theme.lower()) + '.html'
     df_tmp = df[df['root_theme_name'] == theme]
