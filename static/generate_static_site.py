@@ -105,7 +105,7 @@ menu = [
     {'name': 'Home', 'href': 'index.html'},
     {'name': 'Figuren', 'href': 'figures.html'},
     #{'name': 'Über', 'href': 'about.html'},
-    #{'name': 'Wissenswertes', 'href': 'wiki.html'}
+    {'name': 'Wissenswertes', 'href': 'wiki.html'}
 ]
 
 footer = [
@@ -120,9 +120,9 @@ eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet'}
 
 get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating else ''
 
-generate_rating = lambda x: '<div class="ui %s rating disabled"><span data-tooltip="%d von %d Sternen">%s</span></div>' % (get_star_color(x), x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
-generate_exclusive_icon = lambda x: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil" data-position="left center"><i class="right floated orange gem icon"></i></span>' if x else ''
-generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Exklusiver Charakter im Lego-Universum" data-position="left center"><i class="right floated yellow medal icon"></i></span>' if x else ''
+generate_rating = lambda x: '<div class="ui %s rating disabled"><span data-tooltip="%d von %d Sternen" data-inverted="">%s</span></div>' % (get_star_color(x), x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
+generate_exclusive_icon = lambda x: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' if x else ''
+generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Exklusiver Charakter im Lego-Universum" data-position="left center" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
 
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
@@ -152,7 +152,7 @@ df['figure_card'] = df.apply(lambda x: figure_card % {
     'fig_name': x['fig_name'],
     'theme_name': x['theme_name'],
     'root_theme_name': x['root_theme_name'],
-    'theme': '%s / %s' % (x['theme_name'], x['root_theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'],
+    'theme': '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'],
     'set_rating': generate_rating(x['set_rating']),
     'set_num': x['set_num'].split('-')[0],
     'set_name': x['set_name_de'],
@@ -171,7 +171,7 @@ df['year_of_publication'] = df['year_of_publication'].astype(object)
 
 #createSnippet('Über', '', '', 'Über', 'about', 'about.html')
 createSnippet('Home', '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
-#createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
+createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
 createSnippet('Impressum', 'impressum,kelt 9,haftung,inhalte,links', 'Impressum der Webseite brickadvisor.ch', 'Impressum', 'impressum', 'impressum.html')
 createSnippet('Datenschutz', 'datenschutz,kelt 9,haftungausschluss,datenschutzgesetz,artikel 13', '', 'Datenschutz', 'privacy', 'privacy.html')
 

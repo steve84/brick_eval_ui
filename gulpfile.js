@@ -26,6 +26,13 @@ gulp.task('copy-theme-fonts', (cb) => {
   ], cb);
 });
 
+gulp.task('copy-images', (cb) => {
+  pump([
+    gulp.src('./static/assets/images/**/*'),
+	gulp.dest('./static/public/static/images')
+  ], cb);
+});
+
 gulp.task('js-compress', (cb) => {
   pump([
     gulp.src('./static/public/**/*.js'),
@@ -58,6 +65,6 @@ gulp.task('minify-html', (cb) => {
   ], cb);
 });
 
-gulp.task('compress', gulp.series('copy-main-css', 'copy-component-css', 'copy-theme-fonts', 'js-compress', 'minify-css', 'minify-html'));
+gulp.task('compress', gulp.series('copy-main-css', 'copy-component-css', 'copy-theme-fonts', 'copy-images', 'js-compress', 'minify-css', 'minify-html'));
 
 gulp.task('default', gulp.series('compress'));

@@ -10,13 +10,13 @@
             <br />
             %(fig_name)s
         </div>
-        <div class="meta">
+        <div class="meta" style="font-style: italic; color: black;">
             %(theme)s
         </div>
         <div class="description">
             <div class="ui divided list">
                 <div class="item">
-                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine"><i class="circular small help icon"></i></span></div>
+                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine" data-inverted=""><i class="circular small help icon"></i></span></div>
                     %(set_rating)s
                 </div>
                 <div class="item">
@@ -24,24 +24,12 @@
                     %(set_num)s
                 </div>
                 <div class="item">
-                    <div class="header">Preis / Preis pro Stein</div>
-                    CHF %(set_price)s / %(part_price)s
-                </div>
-                <div class="item">
-                    <div class="header">Status <span data-tooltip="Wird der Artikel noch regul&auml;r produziert oder wird er in K&uuml;rze aus dem Sortiment genommen" data-variation="multiline"><i class="circular small help icon"></i></span></div>
-                    %(eol)s
-                </div>
-                <div class="item">
-                    <div class="header">Set Bezeichnung</div>
+                    <div class="header">Set-Bezeichnung</div>
                     %(set_name)s
                 </div>
                 <div class="item">
                     <div class="header">Anzahl Teile</div>
                     %(num_parts)s
-                </div>
-                <div class="item">
-                    <div class="header">Figuren pro Set</div>
-                    %(quantity)s
                 </div>
                 <div class="item">
                     <div class="header">Erscheinungsjahr</div>
@@ -51,15 +39,27 @@
                     <div class="header">Aufkleber</div>
                     %(has_stickers)s
                 </div>
+                <div class="item">
+                    <div class="header">Figuren pro Set</div>
+                    %(quantity)s
+                </div>
+                <div class="item">
+                    <div class="header">Preis / Preis pro Stein</div>
+                    CHF %(set_price)s / %(part_price)s
+                </div>
+                <div class="item">
+                    <div class="header">Status <span data-tooltip="Wird der Artikel noch regul&auml;r produziert oder in K&uuml;rze aus dem Sortiment genommen" data-variation="multiline" data-inverted=""><i class="circular small help icon"></i></span></div>
+                    %(eol)s
+                </div>
             </div>
         </div>
     </div>
     <div class="extra content">
         <div class="ui list">
             <div class="item">
-                <img class="ui mini image" alt="Link %(set_name)s Lego.com" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/800px-LEGO_logo.svg.png"/>
+                <img class="ui mini image" alt="Direktlink zu %(set_name)s" src="static/images/LEGO_logo_50px.png"/>
                 <div class="content">
-                    <a class="header" href="https://www.lego.com/de-ch/product/%(lego_slug)s" target="_blank">lego.ch</a>
+                    <a class="header" href="https://www.lego.com/de-ch/product/%(lego_slug)s" target="_blank">LEGO Direktlink</a>
                     <div class="description">CHF %(set_price)s</div>
                 </div>
             </div>
