@@ -34,19 +34,19 @@ def createFolder(path):
 def generateMenu(activeItem: str) -> str:
     html = '<div class="ui menu">'
     i = 1
+    first_right = True
     for item in menu:
-        html += '<a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+        if item['position'] == 'left':
+            html += '<a class="%sheader item" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+        else:
+            if first_right:
+                html += '<div class="right menu"><a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+                first_right = False
+            else:
+                html += '<a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
         i += 1
-    html += '</div>'
-    return html
-
-
-def generateFooter():
-    html = '<div class="ui horizontal list">'
-    i = len(menu) + 1
-    for item in footer:
-        html += '<a class="item" tabindex="%d" href="%s">%s</a>' % (i, item['href'], item['name'])
-        i += 1
+    if not first_right:
+        html += '</div>'    
     html += '</div>'
     return html
 
@@ -61,7 +61,7 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
         snippet = file.read()
     
     with open(output_folder % outfile, 'w', encoding='utf-8') as file:
-        file.write(base_template.format(meta_keywords.lower(), meta_description.lower(), title, generateMenu(title), header, snippet, generateFooter()))
+        file.write(base_template.format(meta_keywords.lower(), meta_description.lower(), title, generateMenu(title), header, snippet))
 
 
 # select
@@ -102,15 +102,9 @@ output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
 
 menu = [
-    {'name': 'Home', 'href': 'index.html'},
-    {'name': 'Figuren', 'href': 'figures.html'},
-    #{'name': 'Über', 'href': 'about.html'},
-    {'name': 'Wissenswertes', 'href': 'wiki.html'}
-]
-
-footer = [
-    {'name': 'Impressum', 'href': 'impressum.html'},
-    {'name': 'Datenschutz', 'href': 'privacy.html'}
+    {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left'},
+    {'name': 'Impressum', 'href': 'impressum.html', 'position': 'right'},
+    {'name': 'Datenschutz', 'href': 'privacy.html', 'position': 'right'}
 ]
 
 max_star_rating = 4
@@ -122,17 +116,27 @@ get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating els
 
 generate_rating = lambda x: '<div class="ui %s rating disabled"><span data-tooltip="%d von %d Sternen" data-inverted="">%s</span></div>' % (get_star_color(x), x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
 generate_exclusive_icon = lambda x: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' if x else ''
-generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Exklusiver Charakter im Lego-Universum" data-position="left center" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
+generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erstauflage" data-position="left center" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
 
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
 
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
+df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part']), axis=1)
+df['minifig_rating'] = df.apply(lambda x: generate_rating(x['rating']), axis=1)
+df['set_rating'] = df.apply(lambda x: generate_rating(x['set_rating']), axis=1)
+df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
+df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'], axis=1)
+df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
+df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_price'] and not np.isnan(x['set_price']) else '-', axis=1)
+df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
+df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
+df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
+df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
+df['set_name'] = df.apply(lambda x: x['set_name_de'], axis=1)
 
 df = df.sort_values(by=['has_unique_part', 'minifig_score', 'unique_character', 'part_price'], ascending=[False, False, False, True])
-
-download('https://rebrickable.com/static/img/nil_mf.jpg', 'public/static/images/nil_mf.jpg')
 
 for subpath in df[~df['filename'].isna()]['filename']:
     folder, filename = subpath.split('/')
@@ -144,34 +148,32 @@ figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
     figure_card = file.read()
 
-df['figure_card'] = df.apply(lambda x: figure_card % {
-    'minifig_img_link': 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg',
-    'minifig_rating': generate_rating(x['rating']),
-    'is_exclusive': generate_exclusive_icon(x['has_unique_part']),
-    'unique_character': generate_unique_icon(x['unique_character']),
-    'fig_name': x['fig_name'],
-    'theme_name': x['theme_name'],
-    'root_theme_name': x['root_theme_name'],
-    'theme': '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'],
-    'set_rating': generate_rating(x['set_rating']),
-    'set_num': x['set_num'].split('-')[0],
-    'set_name': x['set_name_de'],
-    'lego_slug': x['lego_slug'],
-    'set_price': '%.2f' % (x['set_price'] / 100) if x['set_price'] and not np.isnan(x['set_price']) else '-',
-    'part_price': '%.4f' % x['part_price'] if x['set_price'] else '-',
-    'eol': eol_mapping[x['eol']],
-    'num_parts': x['num_parts'],
-    'quantity': x['quantity'],
-    'year_of_publication': '%.f' % x['year_of_publication'],
-    'has_stickers': 'Ja' if x['has_stickers'] else 'Nein'}, axis=1)
-
-
 df['year_of_publication'] = df['year_of_publication'].astype(object)
 
+main_js_template = ''
+with open('templates/main_template.js', 'r') as file:
+    main_js_template = file.read()
 
-#createSnippet('Über', '', '', 'Über', 'about', 'about.html')
-createSnippet('Home', '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
-createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
+
+wiki_page = ''
+with open('snippets/wiki.html', 'r', encoding='utf-8') as file:
+    wiki_page = file.read()
+
+info_page = ''
+with open('snippets/home.html', 'r', encoding='utf-8') as file:
+    info_page = file.read()
+
+with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
+    createFolder(output_folder % 'static/js')
+    tmp = main_js_template % {'figures': df.to_dict(orient='records'), 'wiki_page': wiki_page.replace('\n', ''), 'info_page': info_page.replace('\n', '')}
+    tmp = tmp.replace('True', 'true')
+    tmp = tmp.replace('False', 'false')
+    tmp = tmp.replace('None', 'null')
+    tmp = tmp.replace(': nan', ': null')
+    file.write(tmp)
+
+# createSnippet('Home', '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
+# createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
 createSnippet('Impressum', 'impressum,kelt 9,haftung,inhalte,links', 'Impressum der Webseite brickadvisor.ch', 'Impressum', 'impressum', 'impressum.html')
 createSnippet('Datenschutz', 'datenschutz,kelt 9,haftungausschluss,datenschutzgesetz,artikel 13', '', 'Datenschutz', 'privacy', 'privacy.html')
 
@@ -180,42 +182,21 @@ with open('templates/base_template.html', 'r') as file:
     base_template = file.read()
 
 
-figure_cards = '<div class="ui five stackable cards">'
-with open(output_folder % 'figures.html', 'w', encoding='utf-8') as file:
-    for val in df[df['num_parts'] >= 15]['figure_card'].head(200).to_list():
-        figure_cards += val
-    
-    figure_cards += '</div>'
+with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
+    figure_cards = '<div class="ui segment">'
+    figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
+    figure_cards += '<form class="ui form"><div class="equal width fields">'
+    figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Figur oder Set-Nummer..." id="input_search_text"></div></div>'
+    figure_cards += '<div class="field"><label>Themen</label><div class="ui clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div></div>'
+    figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div>'
+    figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
+    figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
+    figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
+    figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div>'
+    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination"></div></div>'
+    figure_cards += '<span id="content_figures"></span>'
 
-    figure_label = '<div class="ui basic labels" style="padding-bottom: 15px"><a class="ui inverted olive label" href="figures.html">Top<div class="detail">200</div></a>'
-    for theme in df['root_theme_name'].unique():
-        html_filename = slugify('figure-cards-%s' % theme.lower()) + '.html'
-        df_tmp = df[df['root_theme_name'] == theme]
-        figure_label += '<a class="ui label" href="./%s">%s<div class="detail">%d</div></a>' % (html_filename, theme, len(df_tmp))
-
-    figure_label += '</div>'
-
-    file.write(base_template.format('brickadvisor,lego,figuren,top 200,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Lego Top 200 Minifiguren', 'Figuren - Top 200', generateMenu('Figuren'), 'Figuren - Top 200', figure_label + figure_cards, generateFooter()))
-
-
-for theme in df['root_theme_name'].unique():
-    figure_label = '<div class="ui basic labels" style="padding-bottom: 15px"><a class="ui label" href="figures.html">Top<div class="detail">200</div></a>'
-    figure_cards = '<div class="ui five stackable cards">'
-    html_filename = slugify('figure-cards-%s' % theme.lower()) + '.html'
-    df_tmp = df[df['root_theme_name'] == theme]
-    with open(output_folder % html_filename, 'w', encoding='utf-8') as file:
-        for val in df_tmp['figure_card'].to_list():
-            figure_cards += val
-        
-        figure_cards += '</div>'
-
-        for sub_theme in df['root_theme_name'].unique():
-            html_link = slugify('figure-cards-%s' % sub_theme.lower()) + '.html'
-            figure_label += '<a class="ui %s label" href="./%s">%s<div class="detail">%d</div></a>' % ('inverted olive' if sub_theme == theme else '', html_link, sub_theme, len(df[df['root_theme_name'] == sub_theme]))
-        
-        figure_label += '</div>'
-
-        file.write(base_template.format('brickadvisor,lego,figuren,%s,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein' % theme.lower(), 'Lego %s Minifiguren' % theme.lower(), 'Figuren - %s' % theme, generateMenu('Figuren'), 'Figuren - %s' % theme, figure_label + figure_cards, generateFooter()))
+    file.write(base_template.format('brickadvisor,lego,figuren,star wars,marvel,ninjago,dc,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Lego Minifiguren', 'Figuren', generateMenu('Figuren'), 'Figuren', figure_cards))
 
 
         

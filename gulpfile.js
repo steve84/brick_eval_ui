@@ -4,6 +4,19 @@ const minifycss = require('gulp-clean-css');
 const htmlmin = require('gulp-htmlmin');
 const pump = require('pump');
 
+gulp.task('copy-main-js', (cb) => {
+  pump([
+    gulp.src('./node_modules/fomantic-ui/dist/semantic.min.js'),
+	gulp.dest('./static/public/static/js')
+  ], cb);
+});
+
+gulp.task('copy-component-js', (cb) => {
+  pump([
+    gulp.src('./node_modules/fomantic-ui/dist/components/*.min.js'),
+	gulp.dest('./static/public/static/js/components')
+  ], cb);
+});
 
 gulp.task('copy-main-css', (cb) => {
   pump([
@@ -65,6 +78,6 @@ gulp.task('minify-html', (cb) => {
   ], cb);
 });
 
-gulp.task('compress', gulp.series('copy-main-css', 'copy-component-css', 'copy-theme-fonts', 'copy-images', 'js-compress', 'minify-css', 'minify-html'));
+gulp.task('compress', gulp.series('copy-main-js', 'copy-component-js', 'copy-main-css', 'copy-component-css', 'copy-theme-fonts', 'copy-images', 'js-compress', 'minify-css', 'minify-html'));
 
 gulp.task('default', gulp.series('compress'));
