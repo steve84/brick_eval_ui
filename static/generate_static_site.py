@@ -95,8 +95,8 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
 # left join themes t on t.id = s.theme_id
 # left join themes rt on rt.id = s.root_theme_id
 # left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
-# left join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll;
+# join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
+# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
@@ -134,7 +134,7 @@ df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price']
 df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
 df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
-df['set_name'] = df.apply(lambda x: x['set_name_de'], axis=1)
+df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
 
 df = df.sort_values(by=['has_unique_part', 'minifig_score', 'unique_character', 'part_price'], ascending=[False, False, False, True])
 
@@ -163,6 +163,7 @@ info_page = ''
 with open('snippets/home.html', 'r', encoding='utf-8') as file:
     info_page = file.read()
 
+createFolder(output_folder % 'static/js')
 with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')
     tmp = main_js_template % {'figures': df.to_dict(orient='records'), 'wiki_page': wiki_page.replace('\n', ''), 'info_page': info_page.replace('\n', '')}
@@ -186,7 +187,7 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
     figure_cards = '<div class="ui segment">'
     figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
     figure_cards += '<form class="ui form"><div class="equal width fields">'
-    figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Figur oder Set-Nummer..." id="input_search_text"></div></div>'
+    figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
     figure_cards += '<div class="field"><label>Themen</label><div class="ui clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div>'
     figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
@@ -196,7 +197,7 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
     figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination"></div></div>'
     figure_cards += '<span id="content_figures"></span>'
 
-    file.write(base_template.format('brickadvisor,lego,figuren,star wars,marvel,ninjago,dc,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Lego Minifiguren', 'Figuren', generateMenu('Figuren'), 'Figuren', figure_cards))
+    file.write(base_template.format('brickadvisor,figuren,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Durchstöbere mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die aktuell verfügbaren Lego Minifiguren aus den gängigen Themengebieten wie Star Wars, Marvel, DC Comics oder Ninjago. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.', 'Figuren', generateMenu('Figuren'), 'Figuren', figure_cards))
 
 
         

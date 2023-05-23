@@ -18,11 +18,13 @@ var maxYearTotal = null;
 var actualPage = 1;
 var totalPages = null;
 var pageSize = 20;
-var priceStepSize = 10;
+var priceStepSize = 50;
+
+var initialImgHeight = null;
 
 var search_timeout = null;
 
-var generateCard = obj => `<div class="ui card">    <div class="image">        <img alt="${obj.fig_name} (${obj.theme_name} / ${obj.root_theme_name})" src="${obj.minifig_img_link}" style="max-height: 202px; object-fit: contain;">    </div>    <div class="content">        ${obj.unique_character}        ${obj.minifig_rating}        ${obj.is_exclusive}        <div class="header">            <br />            ${obj.fig_name}        </div>        <div class="meta" style="font-style: italic; color: black;">            ${obj.theme}        </div>        <div class="description">            <div class="ui divided list">                <div class="item">                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine" data-inverted=""><i class="circular small help icon"></i></span></div>                    ${obj.set_rating}                </div>                <div class="item">                    <div class="header">Set-Nummer</div>                    ${obj.set_num}                </div>                <div class="item">                    <div class="header">Set-Bezeichnung</div>                    ${obj.set_name}                </div>                <div class="item">                    <div class="header">Anzahl Teile</div>                    ${obj.num_parts}                </div>                <div class="item">                    <div class="header">Erscheinungsjahr</div>                    ${obj.year_of_publication}                </div>                <div class="item">                    <div class="header">Aufkleber</div>                    ${obj.has_stickers}                </div>                <div class="item">                    <div class="header">Figuren pro Set</div>                    ${obj.quantity}                </div>                <div class="item">                    <div class="header">Preis / Preis pro Stein</div>                    CHF ${obj.set_price} / ${obj.part_price}                </div>                <div class="item">                    <div class="header">Status <span data-tooltip="Wird der Artikel noch regul&auml;r produziert oder in K&uuml;rze aus dem Sortiment genommen" data-variation="multiline" data-inverted=""><i class="circular small help icon"></i></span></div>                    ${obj.eol}                </div>            </div>        </div>    </div>    <div class="extra content">        <div class="ui list">            <div class="item">                <img class="ui mini image" alt="Direktlink zu ${obj.set_name}" src="static/images/LEGO_logo_50px.png"/>                <div class="content">                    <a class="header" href="https://www.lego.com/de-ch/product/${obj.lego_slug}" target="_blank">LEGO Direktlink</a>                    <div class="description">CHF ${obj.set_price}</div>                </div>            </div>        </div>    </div></div>`;
+var generateCard = obj => `<div class="ui card">    <div class="image">        <img alt="${obj.fig_name} (${obj.theme_name} / ${obj.root_theme_name})" src="${obj.minifig_img_link}">    </div>    <div class="content">        ${obj.unique_character}        ${obj.minifig_rating}        ${obj.is_exclusive}        <div class="header">            <br />            ${obj.fig_name}        </div>        <div class="meta" style="font-style: italic; color: black;">            ${obj.theme}        </div>        <div class="description">            <div class="ui divided list">                <div class="item">                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine" data-inverted=""><i class="circular small help icon"></i></span></div>                    ${obj.set_rating}                </div>                <div class="item">                    <div class="header">Set-Nummer</div>                    ${obj.set_num}                </div>                <div class="item">                    <div class="header">Set-Bezeichnung</div>                    ${obj.set_name}                </div>                <div class="item">                    <div class="header">Anzahl Teile</div>                    ${obj.num_parts}                </div>                <div class="item">                    <div class="header">Erscheinungsjahr</div>                    ${obj.year_of_publication}                </div>                <div class="item">                    <div class="header">Aufkleber</div>                    ${obj.has_stickers}                </div>                <div class="item">                    <div class="header">Figuren pro Set</div>                    ${obj.quantity}                </div>                <div class="item">                    <div class="header">Preis / Preis pro Stein</div>                    CHF ${obj.set_price} / ${obj.part_price}                </div>                <div class="item">                    <div class="header">Status <span data-tooltip="Wird der Artikel noch regul&auml;r produziert oder in K&uuml;rze aus dem Sortiment genommen" data-variation="multiline" data-inverted=""><i class="circular small help icon"></i></span></div>                    ${obj.eol}                </div>            </div>        </div>    </div>    <div class="extra content">        <div class="ui list">            <div class="item">                <img class="ui mini image" alt="Direktlink zu ${obj.set_name}" src="static/images/LEGO_logo_50px.png"/>                <div class="content">                    <a class="header" href="https://www.lego.com/de-ch/product/${obj.lego_slug}" target="_blank">LEGO Direktlink</a>                    <div class="description">CHF ${obj.set_price}</div>                </div>            </div>        </div>    </div></div>`;
 
 var showModal = topic => $.modal(topic).modal('show');
 
@@ -72,6 +74,7 @@ var generatePagination = () => {
     $('#pagination').html(output)
 }
 
+var adjustCardImageSizes = () => $('.ui.card .image > img').css({"object-fit": "contain", "max-height": `${initialImgHeight}px`});
 
 var doPagination = page => {
     actualPage = page;
@@ -105,7 +108,7 @@ var resetFilters = () => {
     minYear = null;
     maxYear = null;
     actualPage = 1;
-    $('#slider_price').slider('set rangeValue', minPriceTotal, maxPriceTotal, false);
+    $('#slider_price').slider('set rangeValue', minPriceTotal, Math.ceil(maxPriceTotal / priceStepSize) * priceStepSize, false);
     $('#slider_year_of_publication').slider('set rangeValue', minYearTotal, maxYearTotal, false);
     $('#checkbox_exclusive').checkbox('set unchecked');
     $('#checkbox_first_edition').checkbox('set unchecked');
@@ -117,7 +120,6 @@ var resetFilters = () => {
 
 
 var generateCards = () => {
-    printSearchParams();
     $('#content_figures').html('<div class="ui active centered inline loader"></div>');
     minPriceTotal = Math.floor(figures.map(obj => parseFloat(obj.set_price)).reduce((prev, cur) => prev <= cur ? prev : cur));
     maxPriceTotal = Math.ceil(figures.map(obj => parseFloat(obj.set_price)).reduce((prev, cur) => prev >= cur ? prev : cur));
@@ -132,7 +134,7 @@ var generateCards = () => {
     result = result.filter(obj => !obj || !search_themes || search_themes.search(obj.root_theme_name) > -1)
     result = result.filter(obj => !obj || !first_edition || (obj.unique_character.length > 0 && first_edition))
     result = result.filter(obj => !obj || !is_exclusive || (obj.is_exclusive.length > 0 && is_exclusive))
-    result = result.filter(obj => !obj || !search_text || obj.fig_name.toLowerCase().search(search_text.toLowerCase()) > -1 || obj.set_name.toLowerCase().search(search_text.toLowerCase()) > -1 || obj.set_num.toLowerCase().search(search_text.toLowerCase()) > -1)
+    result = result.filter(obj => !obj || !search_text || (obj.fig_name && obj.fig_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_name && obj.set_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_num && obj.set_num.toLowerCase().search(search_text.toLowerCase()) > -1))
     result = result.map(obj => generateCard(obj));
     totalPages = Math.ceil(result.length / pageSize);
     generatePagination();
@@ -140,7 +142,15 @@ var generateCards = () => {
     output += '<br /></span>';
     output += '<div class="ui five stackable cards" style="margin-top: 5px">';
     output += result.slice((actualPage - 1) * pageSize, actualPage * pageSize).join('');
-    setTimeout(() => $('#content_figures').html(output), 300);
+    setTimeout(() => {
+        $('#content_figures').html(output);
+        $('.ui.card .image > img').first().on('load', e => {
+            if (!initialImgHeight) {
+                initialImgHeight = e.target.height;
+            }
+            adjustCardImageSizes();
+        });
+    }, 500);
 }
 
 $(document).ready(() => {
@@ -216,11 +226,10 @@ $(document).ready(() => {
     onChange: (value, _, $_) => {search_states = value; actualPage = 1; generateCards()}});
     $('#slider_price').slider({
         min: Math.floor(minPriceTotal / priceStepSize) * priceStepSize,
-        max: (Math.floor(maxPriceTotal / priceStepSize) + 1) * priceStepSize,
+        max: Math.ceil(maxPriceTotal / priceStepSize) * priceStepSize,
         start: Math.floor(minPriceTotal / priceStepSize) * priceStepSize,
-        end: (Math.floor(maxPriceTotal / priceStepSize) + 1) * priceStepSize,
-        step: priceStepSize,
-        //labelDistance: priceStepSize * 5,
+        end: Math.ceil(maxPriceTotal / priceStepSize) * priceStepSize,
+        step: 10,
         onChange: (_, minValue, maxValue) => {
             minPrice = minValue;
             maxPrice = maxValue;
