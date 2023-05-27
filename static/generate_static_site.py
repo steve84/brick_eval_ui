@@ -96,7 +96,7 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
 # left join themes rt on rt.id = s.root_theme_id
 # left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
 # join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price;
+# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
@@ -124,8 +124,8 @@ df = df.drop_duplicates()
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
 df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part']), axis=1)
-df['minifig_rating'] = df.apply(lambda x: generate_rating(x['rating']), axis=1)
-df['set_rating'] = df.apply(lambda x: generate_rating(x['set_rating']), axis=1)
+df['minifig_rating_html'] = df.apply(lambda x: generate_rating(x['rating']), axis=1)
+df['set_rating_html'] = df.apply(lambda x: generate_rating(x['set_rating']), axis=1)
 df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
 df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'], axis=1)
 df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
@@ -188,9 +188,10 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
     figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
     figure_cards += '<form class="ui form"><div class="equal width fields">'
     figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
-    figure_cards += '<div class="field"><label>Themen</label><div class="ui clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div></div>'
-    figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="language"><i class="dropdown icon"></i><div class="default text">Select Languages</div></div></div>'
+    figure_cards += '<div class="field"><label>Themen</label><div class="ui clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="dropdown_theme"><i class="dropdown icon"></i><div class="default text">Wähle ein Thema aus</div></div></div></div>'
+    figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="dropdown_status"><i class="dropdown icon"></i><div class="default text">Wähle den Status aus</div></div></div>'
     figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
+    figure_cards += '<div class="equal width fields"><div class="field"><label>Bewertung Figur</label><div class="ui clearable selection dropdown" id="dropdown_fig_rating"><input type="hidden" name="dropdown_fig_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div><div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
     figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div>'
