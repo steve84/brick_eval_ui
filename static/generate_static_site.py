@@ -4,7 +4,10 @@ import unicodedata
 import re
 import requests
 
+from bs4 import BeautifulSoup
 from pathlib import Path
+from urllib.parse import urlparse
+
 
 def slugify(value, allow_unicode=False):
     value = str(value)
@@ -64,6 +67,59 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
         file.write(base_template.format(meta_keywords.lower(), meta_description.lower(), title, generateMenu(title), header, snippet))
 
 
+def generateCardExtraContent(data_row):
+    card_extra_content_template = ''
+    with open('snippets/card_extra_content.html', 'r') as file:
+        card_extra_content_template = file.read()
+
+    output = ''
+    # LEGO
+    output += card_extra_content_template.format('Lego Direktlink zu %(set_name)s' % data_row, 'static/images/LEGO_logo_50px.png', 'https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego Direktlink', 'CHF %(set_price)s' % data_row)
+    # Amazon
+    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'static/images/amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadvisor-21&linkCode=ur2&linkId=33c68d982720ef189b223648dfcba6d7&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
+    # Alternate
+    if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
+        output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'static/images/alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
+
+    return output
+
+
+def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
+    if Path(csv_output_file).is_file():
+        return pd.read_csv(csv_output_file)
+    else:
+        output_list = {'set_num': list(), 'alternate_slug': list(), 'alternate_price': list()}
+        for set in set_list:
+            resp = requests.get(alternate_base_search_url % set.split('-')[0])
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, features='lxml')
+                suggestions = soup.find_all('a', 'suggest-entry')
+                if len(suggestions) == 1:
+                    suggest = suggestions[0]
+                    suggest_text = suggest.findAll('span', 'text-font')
+                    if len(suggest_text) != 1 or suggest_text[0].text.find(set.split('-')[0]) == -1:
+                        print('Wrong search result %s' % set)
+                        continue
+                    url_path = urlparse(suggest.get('href')).path
+                    output_list['alternate_slug'].append(url_path)
+                    prices = suggest.findAll('span', 'text-red')
+                    if len(prices) == 1:
+                        price = int(float(prices[0].text.replace('CHF ', '').replace(',', '.'))*100)
+                        output_list['alternate_price'].append(price)
+                        print('Get price %d' % price)
+                    else:
+                        print('Price not found %s' % set)
+                        output_list['alternate_price'].append(None)
+                    output_list['set_num'].append(str(set))
+                else:
+                    print('Search results not unique %s' % set)
+            else:
+                print('Cannot retrieve set %s' % set)
+
+        df = pd.DataFrame.from_dict(output_list)
+        df.to_csv(csv_output_file, index=False)
+        return df
+
 # select
 # case when m.rebrickable_id is not null
 # then 'https://cdn.rebrickable.com/media/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg'
@@ -96,10 +152,11 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
 # left join themes rt on rt.id = s.root_theme_id
 # left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
 # join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null;
+# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null and i.is_latest;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
+alternate_base_search_url = 'https://www.alternate.ch/search-suggestions.xhtml?q=lego %s'
 
 menu = [
     {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left'},
@@ -121,6 +178,9 @@ generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erst
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
 
+df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
+df = df.merge(df_alternate, how='left', on='set_num')
+
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
 df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part']), axis=1)
@@ -130,11 +190,13 @@ df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
 df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'], axis=1)
 df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
 df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_price'] and not np.isnan(x['set_price']) else '-', axis=1)
+df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
 df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
 df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
 df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
 df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
+df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
 
 df = df.sort_values(by=['has_unique_part', 'minifig_score', 'unique_character', 'part_price'], ascending=[False, False, False, True])
 
@@ -147,6 +209,9 @@ for subpath in df[~df['filename'].isna()]['filename']:
 figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
     figure_card = file.read()
+
+
+
 
 df['year_of_publication'] = df['year_of_publication'].astype(object)
 
@@ -166,7 +231,7 @@ with open('snippets/home.html', 'r', encoding='utf-8') as file:
 createFolder(output_folder % 'static/js')
 with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')
-    tmp = main_js_template % {'figures': df.to_dict(orient='records'), 'wiki_page': wiki_page.replace('\n', ''), 'info_page': info_page.replace('\n', '')}
+    tmp = main_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', ''), 'info_page': info_page.replace('\n', '')}
     tmp = tmp.replace('True', 'true')
     tmp = tmp.replace('False', 'false')
     tmp = tmp.replace('None', 'null')

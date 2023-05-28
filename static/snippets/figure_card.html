@@ -1,68 +1,49 @@
 <div class="ui card">
-    <div class="image">
-        <img alt="%(fig_name)s (%(theme_name)s / %(root_theme_name)s)" src="%(minifig_img_link)s">
-    </div>
-    <div class="content">
-        %(unique_character)s
-        %(minifig_rating)s
-        %(is_exclusive)s
-        <div class="header">
-            <br />
-            %(fig_name)s
-        </div>
-        <div class="meta" style="font-style: italic; color: black;">
-            %(theme)s
-        </div>
+    <div class="image"> <img alt="${obj.fig_name} (${obj.theme_name} / ${obj.root_theme_name})"
+            src="${obj.minifig_img_link}"> </div>
+    <div class="content"> ${obj.unique_character} ${obj.minifig_rating_html} ${obj.is_exclusive} <div class="header">
+            <br /> ${obj.fig_name} </div>
+        <div class="meta" style="font-style: italic; color: black;"> ${obj.theme} </div>
         <div class="description">
             <div class="ui divided list">
                 <div class="item">
-                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine" data-inverted=""><i class="circular small help icon"></i></span></div>
-                    %(set_rating)s
+                    <div class="header">Set-Bewertung <span data-tooltip="Die Seltenheit der einzelnen Steine"
+                            data-inverted=""><i class="circular small help icon"></i></span></div>
+                    ${obj.set_rating_html}
                 </div>
                 <div class="item">
-                    <div class="header">Set-Nummer</div>
-                    %(set_num)s
+                    <div class="header">Set-Nummer</div> ${obj.set_num}
                 </div>
                 <div class="item">
-                    <div class="header">Set-Bezeichnung</div>
-                    %(set_name)s
+                    <div class="header">Set-Bezeichnung</div> ${obj.set_name}
                 </div>
                 <div class="item">
-                    <div class="header">Anzahl Teile</div>
-                    %(num_parts)s
+                    <div class="header">Anzahl Teile</div> ${obj.num_parts}
                 </div>
                 <div class="item">
-                    <div class="header">Erscheinungsjahr</div>
-                    %(year_of_publication)s
+                    <div class="header">Erscheinungsjahr</div> ${obj.year_of_publication}
                 </div>
                 <div class="item">
-                    <div class="header">Aufkleber</div>
-                    %(has_stickers)s
+                    <div class="header">Aufkleber</div> ${obj.has_stickers}
                 </div>
                 <div class="item">
-                    <div class="header">Figuren pro Set</div>
-                    %(quantity)s
+                    <div class="header">Figuren pro Set</div> ${obj.quantity}
                 </div>
                 <div class="item">
-                    <div class="header">Preis / Preis pro Stein</div>
-                    CHF %(set_price)s / %(part_price)s
+                    <div class="header">Preis / Preis pro Stein</div> CHF ${obj.set_price} / ${obj.part_price}
                 </div>
                 <div class="item">
-                    <div class="header">Status <span data-tooltip="Wird der Artikel noch regul&auml;r produziert oder in K&uuml;rze aus dem Sortiment genommen" data-variation="multiline" data-inverted=""><i class="circular small help icon"></i></span></div>
-                    %(eol)s
+                    <div class="header">Status <span
+                            data-tooltip="Wird der Artikel noch regul&auml;r produziert oder in K&uuml;rze aus dem Sortiment genommen"
+                            data-variation="multiline" data-inverted=""><i class="circular small help icon"></i></span>
+                    </div> ${obj.eol}
                 </div>
             </div>
         </div>
     </div>
     <div class="extra content">
-        <div class="ui list">
-            <div class="item">
-                <img class="ui mini image" alt="Direktlink zu %(set_name)s" src="static/images/LEGO_logo_50px.png"/>
-                <div class="content">
-                    <a class="header" href="https://www.lego.com/de-ch/product/%(lego_slug)s" target="_blank">LEGO Direktlink</a>
-                    <div class="description">CHF %(set_price)s</div>
-                </div>
-            </div>
+        <div class="ui divided list">
+            ${obj.card_extra_content}
         </div>
     </div>
 </div>
