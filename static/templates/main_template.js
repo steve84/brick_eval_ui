@@ -79,7 +79,8 @@ var generatePagination = () => {
     } else {
         output += `<a class="icon item" onclick=doPagination(${actualPage + 1})><i class="right chevron icon"></i></a>`;
     }
-    $('#pagination').html(output)
+    $('#pagination_top').html(output)
+    $('#pagination_bottom').html(output)
 }
 
 var adjustCardImageSizes = () => $('.ui.card .image > img').css({"object-fit": "contain", "max-height": `${initialImgHeight}px`});

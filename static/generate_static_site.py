@@ -93,7 +93,7 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
             resp = requests.get(alternate_base_search_url % set.split('-')[0])
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, features='lxml')
-                suggestions = soup.find_all('a', 'suggest-entry')
+                suggestions = soup.find_all('a', {'class': ['suggest-entry', 'mb-1']})
                 if len(suggestions) == 1:
                     suggest = suggestions[0]
                     suggest_text = suggest.findAll('span', 'text-font')
@@ -102,7 +102,7 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
                         continue
                     url_path = urlparse(suggest.get('href')).path
                     output_list['alternate_slug'].append(url_path)
-                    prices = suggest.findAll('span', 'text-red')
+                    prices = suggest.findAll('span', 'suggest-price')
                     if len(prices) == 1:
                         price = int(float(prices[0].text.replace('CHF ', '').replace(',', '.'))*100)
                         output_list['alternate_price'].append(price)
@@ -131,6 +131,7 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 # sc.score as minifig_score,
 # im.quantity,
 # m.has_unique_part,
+# m.unique_parts,
 # m.unique_character,
 # s.set_num,
 # s.eol,
@@ -152,7 +153,8 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 # left join themes rt on rt.id = s.root_theme_id
 # left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
 # join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null and i.is_latest;
+# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null and i.is_latest
+# order by s.set_num, m.name;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
@@ -168,11 +170,14 @@ max_star_rating = 4
 
 star_mapping = {1: 'red', 2: 'orange', 3: 'yellow', 4: 'green'}
 eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet'}
+part_cat_mapping = {'Minifig Headwear': 'Kopfbedeckung', 'Minifig Lower Body': 'Beine', 'Minifig Upper Body': 'Torso', 'Minifig Heads': 'Kopf', 'Minifig Accessories': 'Zubehör', 'Flags, Signs, Plastics and Cloth': 'Bekleidung'}
 
 get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating else ''
+get_figure_part = lambda x: part_cat_mapping[x] if x in part_cat_mapping.keys() else x
 
+generate_unique_parts = lambda x: ', '.join(sorted([get_figure_part(y) for y in x.split(';')]))
 generate_rating = lambda x: '<div class="ui %s rating disabled"><span data-tooltip="%d von %d Sternen" data-inverted="">%s</span></div>' % (get_star_color(x), x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
-generate_exclusive_icon = lambda x: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' if x else ''
+generate_exclusive_icon = lambda x,y: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil (%s)" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' % generate_unique_parts(y) if x else ''
 generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erstauflage" data-position="left center" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
 
 df = pd.read_csv('figures.csv')
@@ -183,7 +188,7 @@ df = df.merge(df_alternate, how='left', on='set_num')
 
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
-df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part']), axis=1)
+df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part'], x['unique_parts']), axis=1)
 df['minifig_rating_html'] = df.apply(lambda x: generate_rating(x['rating']), axis=1)
 df['set_rating_html'] = df.apply(lambda x: generate_rating(x['set_rating']), axis=1)
 df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
@@ -260,8 +265,9 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
     figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
     figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div>'
-    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination"></div></div>'
+    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
     figure_cards += '<span id="content_figures"></span>'
+    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
 
     file.write(base_template.format('brickadvisor,figuren,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Durchstöbere mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die aktuell verfügbaren Lego Minifiguren aus den gängigen Themengebieten wie Star Wars, Marvel, DC Comics oder Ninjago. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.', 'Figuren', generateMenu('Figuren'), 'Figuren', figure_cards))
 
