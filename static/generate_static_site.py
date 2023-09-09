@@ -84,6 +84,44 @@ def generateCardExtraContent(data_row):
     return output
 
 
+def determineRarityColor(score):
+    if score == 1:
+        return 'rgba(190,199,199,%s)'
+    elif score == 2:
+        return 'rgba(214,195,114,%s)'
+    elif score == 3:
+        return 'rgba(188,69,26,%s)'
+    return 'rgba(0,0,0,%s)'
+
+
+def generateCardCss(is_unique, is_exclusive, high_score):
+    score = 0
+    if is_unique:
+        score += 1
+    if is_exclusive:
+        score += 1
+    if high_score:
+        score += 1
+
+    color = determineRarityColor(score)
+
+    return 'border: %s; border-style: solid; border-width: 1px; box-shadow: none; background: %s;' % (color % '1.0', color % '0.15')
+
+
+def generateCardContentCss(is_unique, is_exclusive, high_score):
+    score = 0
+    if is_unique:
+        score += 1
+    if is_exclusive:
+        score += 1
+    if high_score:
+        score += 1
+
+    color = determineRarityColor(score)
+
+    return 'background: linear-gradient(135deg, %s %s, %s %s, transparent %s, transparent %s);' % (color % '1.0', '0%', color % '1.0', '0%', '25%', '100%')
+
+
 def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
     if Path(csv_output_file).is_file():
         return pd.read_csv(csv_output_file)
@@ -176,9 +214,9 @@ get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating els
 get_figure_part = lambda x: part_cat_mapping[x] if x in part_cat_mapping.keys() else x
 
 generate_unique_parts = lambda x: ', '.join(sorted([get_figure_part(y) for y in x.split(';')]))
-generate_rating = lambda x: '<div class="ui %s rating disabled"><span data-tooltip="%d von %d Sternen" data-inverted="">%s</span></div>' % (get_star_color(x), x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
-generate_exclusive_icon = lambda x,y: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil (%s)" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' % generate_unique_parts(y) if x else ''
-generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erstauflage" data-position="left center" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
+generate_rating = lambda prefix, x: '<div class="ui %s rating disabled"><span data-tooltip="%s%d von %d Herzen" data-variation="multiline" data-inverted="">%s</span></div>' % (get_star_color(x), prefix, x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
+generate_exclusive_icon = lambda x,y: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil (%s)" data-variation="multiline" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' % generate_unique_parts(y) if x else ''
+generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erstauflage" data-position="left center" data-variation="multiline" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
 
 df = pd.read_csv('figures.csv')
 df = df.drop_duplicates()
@@ -189,8 +227,8 @@ df = df.merge(df_alternate, how='left', on='set_num')
 df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
 df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part'], x['unique_parts']), axis=1)
-df['minifig_rating_html'] = df.apply(lambda x: generate_rating(x['rating']), axis=1)
-df['set_rating_html'] = df.apply(lambda x: generate_rating(x['set_rating']), axis=1)
+df['minifig_rating_html'] = df.apply(lambda x: generate_rating('Minifigur-Bewertung: ', x['rating']), axis=1)
+df['set_rating_html'] = df.apply(lambda x: generate_rating('Set-Bewertung: ', x['set_rating']), axis=1)
 df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
 df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'], axis=1)
 df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
@@ -202,8 +240,10 @@ df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s' % x['filename'] i
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
 df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
 df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
+df['card_css'] = df.apply(lambda x: generateCardCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
+df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
 
-df = df.sort_values(by=['has_unique_part', 'minifig_score', 'unique_character', 'part_price'], ascending=[False, False, False, True])
+df = df.sort_values(by=['minifig_score', 'unique_character', 'set_score'], ascending=[False, False, False])
 
 for subpath in df[~df['filename'].isna()]['filename']:
     folder, filename = subpath.split('/')
@@ -254,7 +294,8 @@ with open('templates/base_template.html', 'r') as file:
 
 
 with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
-    figure_cards = '<div class="ui segment">'
+    figure_cards = '<p>Durchstöbere mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die aktuell verfügbaren Lego Minifiguren aus den gängigen Themengebieten wie Star Wars, Marvel, DC Comics, Harry Potter oder Ninjago. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.</p>'
+    figure_cards += '<div class="ui segment">'
     figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
     figure_cards += '<form class="ui form"><div class="equal width fields">'
     figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
@@ -264,12 +305,12 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
     figure_cards += '<div class="equal width fields"><div class="field"><label>Bewertung Figur</label><div class="ui clearable selection dropdown" id="dropdown_fig_rating"><input type="hidden" name="dropdown_fig_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div><div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
     figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
-    figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div>'
-    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
+    figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div></div></div>'
+    figure_cards += '<div class="ui segment"><div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
     figure_cards += '<span id="content_figures"></span>'
     figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
 
-    file.write(base_template.format('brickadvisor,figuren,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,uvp,links,exklusiv,bewertung,preis pro stein', 'Durchstöbere mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die aktuell verfügbaren Lego Minifiguren aus den gängigen Themengebieten wie Star Wars, Marvel, DC Comics oder Ninjago. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.', 'Figuren', generateMenu('Figuren'), 'Figuren', figure_cards))
+    file.write(base_template.format('minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein', 'Das Nachschlagewerk für LEGO&#174; Minifiguren. Finde Erstauflagen, Figuren mit exklusiven oder seltenen Teilen sowie bald auslaufende Exemplare (End Of Life)', 'Der Ratgeber für LEGO&#174; Minifiguren', generateMenu('Figuren'), 'Die Enzyklopädie der LEGO&#174; Minifiguren', figure_cards))
 
 
         
