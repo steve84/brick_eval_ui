@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
+import os
 import unicodedata
 import re
 import requests
 
 from bs4 import BeautifulSoup
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
+
 
 
 def slugify(value, allow_unicode=False):
@@ -52,6 +55,21 @@ def generateMenu(activeItem: str) -> str:
         html += '</div>'    
     html += '</div>'
     return html
+
+
+def createSitemap():
+    with open(output_folder % 'sitemap.xml', 'w', encoding='utf-8') as sitemap_file:
+        prefix = 'https://www.brickadvisor.ch'
+        urls = []
+
+        for root, dirs, files in os.walk("public"):
+            for file in files:
+                if file.endswith(".html"):
+                    urls.append('%s/%s' % (prefix, os.path.join(root, file).replace('public\\', '').replace('\\', '/')))
+
+        df = pd.DataFrame(urls, columns=["loc"])
+        df['lastmod'] = str(datetime.now().date())
+        sitemap_file.write(df.to_xml(root_name="urlset", row_name="url", xml_declaration=True, index=False, namespaces={'': 'http://www.sitemaps.org/schemas/sitemap/0.9'}))
 
 
 def createSnippet(title, meta_keywords, meta_description, header, snippet_name, outfile):
@@ -236,20 +254,26 @@ df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_p
 df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
 df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
 df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
-df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s' % x['filename'] if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
 df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
 df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
 df['card_css'] = df.apply(lambda x: generateCardCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
 df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
+df['img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
+df['img_slug'] = df['img_slug'] + '-' + df['filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
+df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
+df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s/%s.jpg' % (x['theme_slug'], x['img_slug']) if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
 
 df = df.sort_values(by=['minifig_score', 'unique_character', 'set_score'], ascending=[False, False, False])
 
-for subpath in df[~df['filename'].isna()]['filename']:
-    folder, filename = subpath.split('/')
+for index, row in df[~df['filename'].isna()].iterrows():
+    folder = row['theme_slug']
+    filename = row['img_slug']
     createFolder('public/static/images/%s' % folder)
-    download((rebrickable_img_url + '%s') % subpath, 'public/static/images/%s/%s' % (folder, filename))
+    download((rebrickable_img_url + '%s') % row['filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['filename'].split('.')[1]))
 
+
+df = df.drop(columns=['filename', 'theme_slug', 'minifig_score', 'set_score', 'img_slug'])
 
 figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
@@ -312,5 +336,4 @@ with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
 
     file.write(base_template.format('minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein', 'Das Nachschlagewerk für LEGO&#174; Minifiguren. Finde Erstauflagen, Figuren mit exklusiven oder seltenen Teilen sowie bald auslaufende Exemplare (End Of Life)', 'Der Ratgeber für LEGO&#174; Minifiguren', generateMenu('Figuren'), 'Die Enzyklopädie der LEGO&#174; Minifiguren', figure_cards))
 
-
-        
+createSitemap()
