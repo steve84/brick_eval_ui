@@ -37,22 +37,26 @@ def createFolder(path):
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def generateMenu(activeItem: str) -> str:
-    html = '<div class="ui menu">'
+def generateMenu(activeItem: str, depth = 0) -> str:
+    html = '<div class="ui stackable menu">'
     i = 1
     first_right = True
-    for item in menu:
+    for index, item in enumerate(menu):
         if item['position'] == 'left':
-            html += '<a class="%sheader item" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+            if len(item['children']) > 0:
+                html += '<div class="ui dropdown item" id="dropdown_menu_minifigures">%s<i class="dropdown icon"></i><div class="menu">' % item['name']
+                html += '%s</div></div>' % ''.join(['<a class="item" href="%s">%s</a>' % ('../'.join(['' for x in range(0, depth + 1)]) + it['href'], it['name']) for it in item['children']])
+            else:
+                html += '<a class="%s %s item" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', 'header ' if index == 0 else '', '../'.join(['' for x in range(0, depth + 1)]) + item['href'], item['name'])
         else:
             if first_right:
-                html += '<div class="right menu"><a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+                html += '<div class="right menu"><a class="%sitem"href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', '../'.join(['' for x in range(0, depth + 1)]) + item['href'], item['name'])
                 first_right = False
             else:
-                html += '<a class="%sitem" tabindex="%d" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', i, item['href'], item['name'])
+                html += '<a class="%sitem" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', '../'.join(['' for x in range(0, depth + 1)]) + item['href'], item['name'])
         i += 1
     if not first_right:
-        html += '</div>'    
+        html += '</div>'
     html += '</div>'
     return html
 
@@ -82,7 +86,37 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
         snippet = file.read()
     
     with open(output_folder % outfile, 'w', encoding='utf-8') as file:
-        file.write(base_template.format(meta_keywords.lower(), meta_description.lower(), title, generateMenu(title), header, snippet))
+        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title), header, snippet, 'static/'))
+
+
+def createCardsSnippet(title, meta_keywords, meta_description, header, paragraph, snippet_name, outfile, depth):
+    base_template = ''
+    with open('templates/base_template.html', 'r') as file:
+        base_template = file.read()
+
+    snippet = ''
+    with open('snippets/%s.html' % snippet_name, 'r') as file:
+        snippet = file.read()
+
+    createFolder( '/'.join((output_folder % outfile).split('/')[:-1]))
+    with open(output_folder % outfile, 'w', encoding='utf-8') as file:
+        figure_cards = '<p>%s</p>' % paragraph
+        figure_cards += '<div class="ui segment">'
+        figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
+        figure_cards += '<form class="ui form"><div class="equal width fields">'
+        figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
+        figure_cards += '<div class="field"><label>Themen</label><div class="ui%s clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="dropdown_theme" value="Star Wars"><i class="dropdown icon"></i><div class="default text">Wähle ein Thema aus</div></div></div></div>' % (' disabled' if len(outfile.split('/')) >= 3 and outfile.index('minifigures') > -1 else '')
+        figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="dropdown_status"><i class="dropdown icon"></i><div class="default text">Wähle den Status aus</div></div></div>'
+        figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
+        figure_cards += '<div class="equal width fields"><div class="field"><label>Bewertung Figur</label><div class="ui clearable selection dropdown" id="dropdown_fig_rating"><input type="hidden" name="dropdown_fig_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div><div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
+        figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
+        figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
+        figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div></div></div>'
+        figure_cards += '<div class="ui segment"><div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
+        figure_cards += '<span id="content_figures"></span>'
+        figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
+
+        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title, depth), header, figure_cards, '../'.join(['' for x in range(0, depth + 1)]) + 'static/'))
 
 
 def generateCardExtraContent(data_row):
@@ -92,12 +126,12 @@ def generateCardExtraContent(data_row):
 
     output = ''
     # LEGO
-    output += card_extra_content_template.format('Lego Direktlink zu %(set_name)s' % data_row, 'static/images/LEGO_logo_50px.png', 'https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego Direktlink', 'CHF %(set_price)s' % data_row)
+    output += card_extra_content_template.format('Lego&#174; Direktlink zu %(set_name)s' % data_row, 'LEGO_logo_50px.png', 'https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego&#174; Direktlink', 'CHF %(set_price)s' % data_row)
     # Amazon
-    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'static/images/amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadvisor-21&linkCode=ur2&linkId=33c68d982720ef189b223648dfcba6d7&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
+    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadvisor-21&linkCode=ur2&linkId=33c68d982720ef189b223648dfcba6d7&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
     # Alternate
     if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
-        output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'static/images/alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
+        output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
 
     return output
 
@@ -178,7 +212,7 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 
 # select
 # case when m.rebrickable_id is not null
-# then 'https://cdn.rebrickable.com/media/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg'
+# then 'https://cdn.rebrickable.com/media/thumbs/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg/300x300p.jpg'
 # else 'https://rebrickable.com/static/img/nil_mf.jpg' end as minifig_img_link,
 # m.name as fig_name,
 # t.name as theme_name,
@@ -213,13 +247,28 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 # order by s.set_num, m.name;
 
 output_folder = 'public/%s'
-rebrickable_img_url = 'https://cdn.rebrickable.com/media/sets/'
+rebrickable_img_url = 'https://cdn.rebrickable.com/media/thumbs/sets/'
 alternate_base_search_url = 'https://www.alternate.ch/search-suggestions.xhtml?q=lego %s'
 
 menu = [
-    {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left'},
-    {'name': 'Impressum', 'href': 'impressum.html', 'position': 'right'},
-    {'name': 'Datenschutz', 'href': 'privacy.html', 'position': 'right'}
+    {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left', 'children': []},
+    {'name': 'Minifiguren', 'href': None, 'position': 'left', 'children': [
+        {'name': 'Alle Themen', 'href': 'minifigures/index.html', 'position': 'left', 'children': []}
+    ]},
+    {'name': 'Impressum', 'href': 'impressum.html', 'position': 'right', 'children': []},
+    {'name': 'Datenschutz', 'href': 'privacy.html', 'position': 'right', 'children': []}
+]
+
+top_themes = [
+    'Star Wars',
+    'Harry Potter',
+    'Super Heroes Marvel',
+    'Super Heroes DC',
+    'Ninjago',
+    'Collectible Minifigures',
+    'Icons',
+    'Minecraft',
+    'Indiana Jones'
 ]
 
 max_star_rating = 4
@@ -262,7 +311,7 @@ df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique
 df['img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
 df['img_slug'] = df['img_slug'] + '-' + df['filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
 df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
-df['minifig_img_link'] = df.apply(lambda x: 'static/images/%s/%s.jpg' % (x['theme_slug'], x['img_slug']) if x['filename'] else 'static/images/nil_mf.jpg', axis=1)
+df['minifig_img_link'] = df.apply(lambda x: '%s/%s.jpg' % (x['theme_slug'], x['img_slug']) if x['filename'] else 'nil_mf.jpg', axis=1)
 
 df = df.sort_values(by=['minifig_score', 'unique_character', 'set_score'], ascending=[False, False, False])
 
@@ -270,7 +319,7 @@ for index, row in df[~df['filename'].isna()].iterrows():
     folder = row['theme_slug']
     filename = row['img_slug']
     createFolder('public/static/images/%s' % folder)
-    download((rebrickable_img_url + '%s') % row['filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['filename'].split('.')[1]))
+    download((rebrickable_img_url + '%s') % row['filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['filename'].split('.')[-1]))
 
 
 df = df.drop(columns=['filename', 'theme_slug', 'minifig_score', 'set_score', 'img_slug'])
@@ -307,33 +356,38 @@ with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
     tmp = tmp.replace(': nan', ': null')
     file.write(tmp)
 
-# createSnippet('Home', '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
+for theme in top_themes:
+    menu[1]['children'].append({'name': theme, 'href': 'minifigures/%s/index.html' % slugify(theme), 'position': 'left', 'children': []})
+
+
+actualYear = datetime.now().year
+
+createSnippet('Der Ratgeber für LEGO&#174; %s Minifiguren' % actualYear, '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
 # createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
 createSnippet('Impressum', 'impressum,kelt 9,haftung,inhalte,links', 'Impressum der Webseite brickadvisor.ch', 'Impressum', 'impressum', 'impressum.html')
 createSnippet('Datenschutz', 'datenschutz,kelt 9,haftungausschluss,datenschutzgesetz,artikel 13', '', 'Datenschutz', 'privacy', 'privacy.html')
 
-base_template = ''
-with open('templates/base_template.html', 'r') as file:
-    base_template = file.read()
+createCardsSnippet(
+    'Die besten LEGO&#174; Minifiguren %d' % actualYear,
+    'minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein',
+    'Das Nachschlagewerk der besten LEGO&#174; Minifiguren. Finde Erstauflagen, Figuren mit exklusiven oder seltenen Teilen sowie bald auslaufende Exemplare (End Of Life)',
+    'Der Ratgeber für LEGO&#174; Minifiguren',
+    'Durchsuche mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die besten Lego&#174; Minifiguren %d. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.' % actualYear,
+    'figure_card',
+    'minifigures/index.html',
+    1
+)
 
-
-with open(output_folder % 'index.html', 'w', encoding='utf-8') as file:
-    figure_cards = '<p>Durchstöbere mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die aktuell verfügbaren Lego Minifiguren aus den gängigen Themengebieten wie Star Wars, Marvel, DC Comics, Harry Potter oder Ninjago. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.</p>'
-    figure_cards += '<div class="ui segment">'
-    figure_cards += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
-    figure_cards += '<form class="ui form"><div class="equal width fields">'
-    figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
-    figure_cards += '<div class="field"><label>Themen</label><div class="ui clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="dropdown_theme"><i class="dropdown icon"></i><div class="default text">Wähle ein Thema aus</div></div></div></div>'
-    figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="dropdown_status"><i class="dropdown icon"></i><div class="default text">Wähle den Status aus</div></div></div>'
-    figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
-    figure_cards += '<div class="equal width fields"><div class="field"><label>Bewertung Figur</label><div class="ui clearable selection dropdown" id="dropdown_fig_rating"><input type="hidden" name="dropdown_fig_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div><div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
-    figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
-    figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
-    figure_cards += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_info"><i class="info icon"></i>Info</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div></div></div>'
-    figure_cards += '<div class="ui segment"><div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
-    figure_cards += '<span id="content_figures"></span>'
-    figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
-
-    file.write(base_template.format('minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein', 'Das Nachschlagewerk für LEGO&#174; Minifiguren. Finde Erstauflagen, Figuren mit exklusiven oder seltenen Teilen sowie bald auslaufende Exemplare (End Of Life)', 'Der Ratgeber für LEGO&#174; Minifiguren', generateMenu('Figuren'), 'Die Enzyklopädie der LEGO&#174; Minifiguren', figure_cards))
+for theme in top_themes:
+    createCardsSnippet(
+        'Die besten LEGO&#174; %s Minifiguren %d' % (theme, actualYear),
+        'minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,%s,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein' % theme.lower(),
+        'Das Nachschlagewerk der besten LEGO&#174; %s Minifiguren %d. Finde Erstauflagen, Figuren mit exklusiven Teilen sowie bald auslaufende Exemplare (End Of Life)' % (theme, actualYear),
+        'Der Ratgeber für LEGO&#174; %s Minifiguren' % theme,
+        'Durchsuche mit Hilfe von verschiedenen Filtern (Exklusivität, Erstausgaben von Charakteren, Bewertung der Einzelsteine, EOL-Status der dazugehörigen Sets) auf Brickadvisor die besten Lego&#174; %s Minifiguren %d. Egal ob als Sammelobjekt für die Vitrine, zum Tauschen unter Gleichgesinnten oder als Wertanlage, dank Brickadvisor verpasst Du keine interessante Figur mehr.' % (theme, actualYear),
+        'figure_card',
+        'minifigures/%s/index.html' % slugify(theme),
+        2
+    )
 
 createSitemap()

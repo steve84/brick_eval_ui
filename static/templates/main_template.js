@@ -1,6 +1,5 @@
 var figures = %(figures)s;
 
-var search_themes = null;
 var search_states = null;
 var search_text = null;
 var is_exclusive = null;
@@ -28,11 +27,18 @@ var ratings = [
     {"name": "4 Herzen", "value": 4, "icon": "green heart"}
 ]
 
-var initialImgHeight = null;
-
 var search_timeout = null;
 
 var generateCard = obj =>  `%(figure_template)s`;
+
+var getStaticFolder = () => $('link')[0].href.split('images')[0];
+
+var isSlugActive = slug => (location.href.indexOf('minifigures') > 0 ? location.href.split('minifigures')[1].substring(1) : '').startsWith(slug.replaceAll(' ', '-').toLowerCase().trim())
+
+var search_themes = Array.from(new Set(figures.map(obj => obj.root_theme_name))).find(t => this.isSlugActive(t));
+if (!search_themes) {
+    search_themes = '';
+}
 
 var showModal = topic => $.modal(topic).modal('show');
 
@@ -83,8 +89,6 @@ var generatePagination = () => {
     $('#pagination_bottom').html(output)
 }
 
-var adjustCardImageSizes = () => $('.ui.card .image > img').css({"object-fit": "contain", "max-height": `${initialImgHeight}px`});
-
 var doPagination = page => {
     actualPage = page;
     generateCards();
@@ -109,7 +113,10 @@ var resetFilters = () => {
     if (!!search_timeout) {
         clearTimeout(search_timeout);
     }
-    search_themes = null;
+    search_themes = Array.from(new Set(figures.map(obj => obj.root_theme_name))).find(t => this.isSlugActive(t));
+    if (!search_themes) {
+        search_themes = '';
+    }
     search_states = null;
     search_text = null;
     is_exclusive = null;
@@ -125,7 +132,9 @@ var resetFilters = () => {
     $('#slider_year_of_publication').slider('set rangeValue', minYearTotal, maxYearTotal, false);
     $('#checkbox_exclusive').checkbox('set unchecked');
     $('#checkbox_first_edition').checkbox('set unchecked');
-    $('#dropdown_theme').dropdown('clear');
+    if (search_themes.length === 0) {
+        $('#dropdown_theme').dropdown('clear');
+    }
     $('#dropdown_status').dropdown('clear');
     $('#dropdown_fig_rating').dropdown('clear');
     $('#dropdown_set_rating').dropdown('clear');
@@ -147,7 +156,7 @@ var generateCards = () => {
     result = result.filter(obj => !obj || !minYear || +obj.year_of_publication >= minYear)
     result = result.filter(obj => !obj || !maxPrice || parseFloat(obj.set_price) <= maxPrice)
     result = result.filter(obj => !obj || !minPrice || parseFloat(obj.set_price) >= minPrice)
-    result = result.filter(obj => !obj || !search_themes || search_themes.search(obj.root_theme_name) > -1)
+    result = result.filter(obj => !obj || search_themes.length === 0 || search_themes.search(obj.root_theme_name) > -1)
     result = result.filter(obj => !obj || !first_edition || (obj.unique_character.length > 0 && first_edition))
     result = result.filter(obj => !obj || !is_exclusive || (obj.is_exclusive.length > 0 && is_exclusive))
     result = result.filter(obj => !obj || !search_text || (obj.fig_name && obj.fig_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_name && obj.set_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_num && obj.set_num.toLowerCase().search(search_text.toLowerCase()) > -1))
@@ -160,11 +169,10 @@ var generateCards = () => {
     output += result.slice((actualPage - 1) * pageSize, actualPage * pageSize).join('');
     setTimeout(() => {
         $('#content_figures').html(output);
-        $('.ui.card .image > img').first().on('load', e => {
-            if (!initialImgHeight) {
-                initialImgHeight = e.target.height;
-            }
-            adjustCardImageSizes();
+        $('img').each((index, element) => {
+            var path = location.href.replace('index.html', '');
+            var relImgPath = element.src.replace(path, '');
+            element.src = this.getStaticFolder() + 'images/' + relImgPath;
         });
     }, 500);
 }
@@ -229,6 +237,7 @@ $(document).ready(() => {
             obj = {};
             obj["name"] = t;
             obj["value"] = t;
+            obj["selected"] = this.isSlugActive(t);
             return obj;
     }),
     onChange: (value, _, $_) => {search_themes = value; actualPage = 1; generateCards()}});
@@ -284,8 +293,8 @@ $(document).ready(() => {
         }
     });
     $('.ui.accordion').accordion();
+    $('#dropdown_menu_minifigures').dropdown();
     $('#input_search_text').on('input', () => setSearchText());
     $('#button_reset').on('click', () => resetFilters());
-    $('#button_info').on('click', () => showModal("info"));
     $('#button_wiki').on('click', () => showModal("wiki"));
 });

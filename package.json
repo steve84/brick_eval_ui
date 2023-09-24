@@ -22,6 +22,7 @@
 	"gulp-imagemin": "^7.1.0",
 	"gulp-uglify": "^3.0.2",
 	"gulp-replace": "^1.1.4",
+  "gulp-gzip": "^1.4.2",
 	"jquery": "^3.7.0"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ const uglify = require('gulp-uglify');
 const minifycss = require('gulp-clean-css');
 const htmlmin = require('gulp-htmlmin');
 const replace = require('gulp-replace');
+const gzip = require('gulp-gzip');
 const pump = require('pump');
 
 gulp.task('copy-main-js', (cb) => {
@@ -56,7 +57,7 @@ gulp.task('copy-images', (cb) => {
 
 gulp.task('set_variables', (cb) => {
   pump([
-    gulp.src(['./static/public/*.html']),
+    gulp.src(['./static/public/**/*.html']),
     replace('GULP_GA_CODE', 'window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag("js", new Date());gtag("config", "GULP_GA_ID");'),
     replace('GULP_GA_ID', 'G-T0YG01CF3J'),
     gulp.dest('./static/public')
@@ -67,6 +68,7 @@ gulp.task('js-compress', (cb) => {
   pump([
     gulp.src('./static/public/**/*.js'),
     uglify(),
+    gzip(),
     gulp.dest('./static/public')
   ], cb);
 });
@@ -75,6 +77,7 @@ gulp.task('minify-css', (cb) => {
   pump([
     gulp.src('./static/public/**/*.css'),
     minifycss({ compatibility: 'ie8' }),
+    gzip(),
     gulp.dest('./static/public')
   ], cb);
 });
