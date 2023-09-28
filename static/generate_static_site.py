@@ -44,7 +44,7 @@ def generateMenu(activeItem: str, depth = 0) -> str:
     for index, item in enumerate(menu):
         if item['position'] == 'left':
             if len(item['children']) > 0:
-                html += '<div class="ui dropdown item" id="dropdown_menu_minifigures">%s<i class="dropdown icon"></i><div class="menu">' % item['name']
+                html += '<div class="ui dropdown item" id="%s">%s<i class="dropdown icon"></i><div class="menu">' % (item['id'], item['name'])
                 html += '%s</div></div>' % ''.join(['<a class="item" href="%s">%s</a>' % ('../'.join(['' for x in range(0, depth + 1)]) + it['href'], it['name']) for it in item['children']])
             else:
                 html += '<a class="%s %s item" href="%s">%s</a>' % ('active ' if item['name'] == activeItem else '', 'header ' if index == 0 else '', '../'.join(['' for x in range(0, depth + 1)]) + item['href'], item['name'])
@@ -86,7 +86,7 @@ def createSnippet(title, meta_keywords, meta_description, header, snippet_name, 
         snippet = file.read()
     
     with open(output_folder % outfile, 'w', encoding='utf-8') as file:
-        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title), header, snippet, 'static/'))
+        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title), header, snippet, 'static/', 'main_minifigures'))
 
 
 def createCardsSnippet(title, meta_keywords, meta_description, header, paragraph, snippet_name, outfile, depth):
@@ -116,7 +116,36 @@ def createCardsSnippet(title, meta_keywords, meta_description, header, paragraph
         figure_cards += '<span id="content_figures"></span>'
         figure_cards += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
 
-        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title, depth), header, figure_cards, '../'.join(['' for x in range(0, depth + 1)]) + 'static/'))
+        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title, depth), header, figure_cards, '../'.join(['' for x in range(0, depth + 1)]) + 'static/', 'main_minifigures'))
+
+
+def createRowSnippet(title, meta_keywords, meta_description, header, paragraph, snippet_name, outfile, depth):
+    base_template = ''
+    with open('templates/base_template.html', 'r') as file:
+        base_template = file.read()
+
+    snippet = ''
+    with open('snippets/%s.html' % snippet_name, 'r') as file:
+        snippet = file.read()
+
+    createFolder( '/'.join((output_folder % outfile).split('/')[:-1]))
+    with open(output_folder % outfile, 'w', encoding='utf-8') as file:
+        set_rows = '<p>%s</p>' % paragraph
+        set_rows += '<div class="ui segment">'
+        set_rows += '<div class="ui accordion"><div class="active title"><i class="dropdown icon"></i>Filtereinstellungen</div><div class="active content">'
+        set_rows += '<form class="ui form"><div class="equal width fields">'
+        set_rows += '<div class="field"><label>Suche Sets</label><div class="ui input"><input type="text" placeholder="Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
+        set_rows += '<div class="field"><label>Themen</label><div class="ui%s clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="dropdown_theme"><i class="dropdown icon"></i><div class="default text">Wähle ein Thema aus</div></div></div></div>' % (' disabled' if len(outfile.split('/')) >= 3 and outfile.index('sets') > -1 else '')
+        set_rows += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="dropdown_status"><i class="dropdown icon"></i><div class="default text">Wähle den Status aus</div></div></div>'
+        set_rows += '<div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
+        set_rows += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
+        set_rows += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
+        set_rows += '<button class="ui primary button" id="button_reset">Filter zurücksetzen</button><button class="ui button" id="button_wiki"><i class="book icon"></i>Wiki</button></div></div></div>'
+        set_rows += '<div class="ui segment"><div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_top"></div></div>'
+        set_rows += '<span id="content_sets"></span>'
+        set_rows += '<div class="ui segment"><div class="ui center aligned pagination menu" id="pagination_bottom"></div></div>'
+
+        file.write(base_template.format(meta_keywords.lower(), meta_description, title, generateMenu(title, depth), header, set_rows, '../'.join(['' for x in range(0, depth + 1)]) + 'static/', 'main_sets'))
 
 
 def generateCardExtraContent(data_row):
@@ -214,6 +243,9 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 # case when m.rebrickable_id is not null
 # then 'https://cdn.rebrickable.com/media/thumbs/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg/300x300p.jpg'
 # else 'https://rebrickable.com/static/img/nil_mf.jpg' end as minifig_img_link,
+# case when s.rebrickable_id is not null
+# then 'https://cdn.rebrickable.com/media/thumbs/sets/' || s.set_num || '/' || s.rebrickable_id || '.jpg/300x300p.jpg'
+# else 'https://rebrickable.com/static/img/nil_mf.jpg' end as set_img_link,
 # m.name as fig_name,
 # t.name as theme_name,
 # rt.name as root_theme_name,
@@ -229,7 +261,8 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 # s.name_de as set_name_de,
 # s.lego_slug as lego_slug,
 # s.num_parts,
-# sc.year_of_publication,
+# m.year_of_publication,
+# s.year_of_publication as set_year_of_publication,
 # s.has_stickers,
 # scs.rating as set_rating,
 # scs.score as set_score,
@@ -251,12 +284,15 @@ rebrickable_img_url = 'https://cdn.rebrickable.com/media/thumbs/sets/'
 alternate_base_search_url = 'https://www.alternate.ch/search-suggestions.xhtml?q=lego %s'
 
 menu = [
-    {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left', 'children': []},
-    {'name': 'Minifiguren', 'href': None, 'position': 'left', 'children': [
-        {'name': 'Alle Themen', 'href': 'minifigures/index.html', 'position': 'left', 'children': []}
+    {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left', 'id': None, 'children': []},
+    {'name': 'Minifiguren', 'href': None, 'position': 'left', 'id': 'dropdown_menu_minifigures', 'children': [
+        {'name': 'Alle Themen', 'href': 'minifigures/index.html', 'position': 'left', 'id': None, 'children': []}
     ]},
-    {'name': 'Impressum', 'href': 'impressum.html', 'position': 'right', 'children': []},
-    {'name': 'Datenschutz', 'href': 'privacy.html', 'position': 'right', 'children': []}
+    {'name': 'Sets', 'href': None, 'position': 'left', 'id': 'dropdown_menu_sets', 'children': [
+        {'name': 'Alle Themen', 'href': 'sets/index.html', 'position': 'left', 'id': None, 'children': []}
+    ]},
+    {'name': 'Impressum', 'href': 'impressum.html', 'position': 'right', 'id': None, 'children': []},
+    {'name': 'Datenschutz', 'href': 'privacy.html', 'position': 'right', 'id': None, 'children': []}
 ]
 
 top_themes = [
@@ -291,7 +327,8 @@ df = df.drop_duplicates()
 df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
 df = df.merge(df_alternate, how='left', on='set_num')
 
-df['filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
+df['minifig_filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
+df['set_filename'] = df['set_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
 df['is_exclusive'] = df.apply(lambda x: generate_exclusive_icon(x['has_unique_part'], x['unique_parts']), axis=1)
 df['minifig_rating_html'] = df.apply(lambda x: generate_rating('Minifigur-Bewertung: ', x['rating']), axis=1)
@@ -308,35 +345,52 @@ df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x[
 df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
 df['card_css'] = df.apply(lambda x: generateCardCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
 df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
-df['img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
-df['img_slug'] = df['img_slug'] + '-' + df['filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
+df['fig_img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
+df['fig_img_slug'] = df['fig_img_slug'] + '-' + df['minifig_filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
+df['set_img_slug'] = df.apply(lambda x: 'lego-%s-%s' % (x['set_num'], slugify(x['set_name'])), axis=1)
 df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
-df['minifig_img_link'] = df.apply(lambda x: '%s/%s.jpg' % (x['theme_slug'], x['img_slug']) if x['filename'] else 'nil_mf.jpg', axis=1)
+df['minifig_img_link'] = df.apply(lambda x: 'minifigures/%s/%s.jpg' % (x['theme_slug'], x['fig_img_slug']) if x['minifig_filename'] else 'nil_mf.jpg', axis=1)
+df['set_img_link'] = df.apply(lambda x: 'sets/%s/%s.jpg' % (x['theme_slug'], x['set_img_slug']) if x['set_filename'] else 'nil_mf.jpg', axis=1)
 
 df = df.sort_values(by=['minifig_score', 'unique_character', 'set_score'], ascending=[False, False, False])
 
-for index, row in df[~df['filename'].isna()].iterrows():
-    folder = row['theme_slug']
-    filename = row['img_slug']
+for index, row in df[~df['minifig_filename'].isna()].iterrows():
+    folder = 'minifigures/%s' % row['theme_slug']
+    filename = row['fig_img_slug']
     createFolder('public/static/images/%s' % folder)
-    download((rebrickable_img_url + '%s') % row['filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['filename'].split('.')[-1]))
+    download((rebrickable_img_url + '%s') % row['minifig_filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['minifig_filename'].split('.')[-1]))
+
+for index, row in df[~df['set_filename'].isna()].iterrows():
+    folder = 'sets/%s' % row['theme_slug']
+    filename = row['set_img_slug']
+    createFolder('public/static/images/%s' % folder)
+    download((rebrickable_img_url + '%s') % row['set_filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['set_filename'].split('.')[-1]))
 
 
-df = df.drop(columns=['filename', 'theme_slug', 'minifig_score', 'set_score', 'img_slug'])
+df = df.drop(columns=['minifig_filename', 'minifig_filename', 'theme_slug', 'minifig_score', 'set_score', 'fig_img_slug', 'fig_img_slug'])
 
 figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
     figure_card = file.read()
 
+set_row = ''
+with open('snippets/set_row.html', 'r') as file:
+    set_row = file.read()
 
+figure_cell = ''
+with open('snippets/figure_cell.html', 'r') as file:
+    figure_cell = file.read()
 
 
 df['year_of_publication'] = df['year_of_publication'].astype(object)
 
-main_js_template = ''
-with open('templates/main_template.js', 'r') as file:
-    main_js_template = file.read()
+main_minifigures_js_template = ''
+with open('templates/main_minifigures_template.js', 'r') as file:
+    main_minifigures_js_template = file.read()
 
+main_sets_js_template = ''
+with open('templates/main_sets_template.js', 'r') as file:
+    main_sets_js_template = file.read()
 
 wiki_page = ''
 with open('snippets/wiki.html', 'r', encoding='utf-8') as file:
@@ -347,9 +401,19 @@ with open('snippets/home.html', 'r', encoding='utf-8') as file:
     info_page = file.read()
 
 createFolder(output_folder % 'static/js')
-with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
+with open(output_folder % 'static/js/main_minifigures.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')
-    tmp = main_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', ''), 'info_page': info_page.replace('\n', '')}
+    tmp = main_minifigures_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'row_template': set_row.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', '')}
+    tmp = tmp.replace('True', 'true')
+    tmp = tmp.replace('False', 'false')
+    tmp = tmp.replace('None', 'null')
+    tmp = tmp.replace(': nan', ': null')
+    file.write(tmp)
+
+df = df.groupby(by=['root_theme_name', 'theme', 'set_rating_html', 'set_num', 'set_name', 'num_parts', 'set_year_of_publication', 'has_stickers', 'set_price', 'part_price', 'eol', 'card_extra_content', 'set_img_link']).apply(lambda x: x[['fig_name', 'minifig_img_link', 'is_exclusive', 'unique_character', 'minifig_rating_html', 'quantity', 'card_content_css', 'card_css']].to_dict('records')).reset_index().rename(columns={0: 'figures'})
+with open(output_folder % 'static/js/main_sets.js', 'w', encoding='utf-8') as file:
+    createFolder(output_folder % 'static/js')
+    tmp = main_sets_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'row_template': set_row.replace('\n', ''), 'figure_cell_template': figure_cell.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', '')}
     tmp = tmp.replace('True', 'true')
     tmp = tmp.replace('False', 'false')
     tmp = tmp.replace('None', 'null')
@@ -358,6 +422,7 @@ with open(output_folder % 'static/js/main.js', 'w', encoding='utf-8') as file:
 
 for theme in top_themes:
     menu[1]['children'].append({'name': theme, 'href': 'minifigures/%s/index.html' % slugify(theme), 'position': 'left', 'children': []})
+    menu[2]['children'].append({'name': theme, 'href': 'sets/%s/index.html' % slugify(theme), 'position': 'left', 'children': []})
 
 
 actualYear = datetime.now().year
@@ -378,6 +443,17 @@ createCardsSnippet(
     1
 )
 
+createRowSnippet(
+    'Die besten LEGO&#174; Sets %d' % actualYear,
+    'sets,minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,star wars,marvel,ninjago,dc,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein',
+    'Das Nachschlagewerk der besten LEGO&#174; Sets. Finde Sets mit seltenen Teilen sowie bald auslaufende Produkte (End Of Life)',
+    'Der Ratgeber für LEGO&#174; Sets',
+    'Durchsuche mit Hilfe von verschiedenen Filtern (Bewertung der Einzelsteine oder EOL-Status) auf Brickadvisor die besten Lego&#174; Sets %d.' % actualYear,
+    'set_row',
+    'sets/index.html',
+    1
+)
+
 for theme in top_themes:
     createCardsSnippet(
         'Die besten LEGO&#174; %s Minifiguren %d' % (theme, actualYear),
@@ -389,5 +465,18 @@ for theme in top_themes:
         'minifigures/%s/index.html' % slugify(theme),
         2
     )
+
+    createRowSnippet(
+        'Die besten LEGO&#174; %s Sets %d' % (theme, actualYear),
+        'sets,minifigur,minifiguren,figur,figuren,ratgeber,lexikon,lego,seltenheit,eol,%s,wertanlage,investment,geldanlage,uvp,links,exklusiv,exklusivität,bewertung,preis pro stein' % theme.lower(),
+        'Das Nachschlagewerk der besten LEGO&#174; %s Sets %d. Finde Sets mit seltenen Teilen sowie bald auslaufende Produkte (End Of Life)' % (theme, actualYear),
+        'Der Ratgeber für LEGO&#174; %s Sets' % theme,
+        'Durchsuche mit Hilfe von verschiedenen Filtern (Bewertung der Einzelsteine oder EOL-Status) auf Brickadvisor die besten Lego&#174; %s Sets %d.' % (theme, actualYear),
+        'set_row',
+        'sets/%s/index.html' % slugify(theme),
+        2
+    )
+
+
 
 createSitemap()

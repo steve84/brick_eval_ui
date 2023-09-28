@@ -1,0 +1,47 @@
+<tr class="top aligned">
+    <td class="center aligned"><img class="ui medium image" alt="${obj.theme}: ${obj.set_name} (${obj.set_num})" src="${obj.set_img_link}"></td>
+    <td>
+        <div class="ui divided list">
+            <div class="item">
+               <b>Set-Bewertung:</b> ${obj.set_rating_html}
+            </div>
+            <div class="item">
+                <b>Set-Nummer:</b> ${obj.set_num}
+            </div>
+            <div class="item">
+                <b>Set Name:</b> ${obj.set_name}
+            </div>
+            <div class="item">
+                <b>Anzahl Teile:</b> ${obj.num_parts}
+            </div>
+            <div class="item">
+                <b>Anzahl Figuren:</b> ${obj.figure_count}
+            </div>
+            <div class="item">
+                <b>Erscheinungsjahr:</b> ${obj.set_year_of_publication}
+            </div>
+            <div class="item">
+                <b>Preis / Preis pro Stein:</b> ${obj.set_price} / ${obj.part_price}
+            </div>
+            <div class="item">
+                <b>Verf&uuml;gbarkeit:</b> ${obj.eol}
+            </div>
+            <div class="item">
+                <b>Thema:</b> ${obj.theme}
+            </div>
+            <div class="item">
+                <b>Sticker:</b> ${obj.has_stickers}
+            </div>
+            <div class="item">
+                <b>Links:</b><br/>
+                <div class="ui divided list">
+                    ${obj.card_extra_content}
+                </div>
+            </div>
+        </div>
+    </td>
+    <td style="margin-top: 11px"><div class="ui three column grid">${obj.figures}</div></td>
+</tr>
+
+
+
