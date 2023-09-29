@@ -7,7 +7,12 @@ import requests
 
 from bs4 import BeautifulSoup
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urlparse
 
 
@@ -155,12 +160,16 @@ def generateCardExtraContent(data_row):
 
     output = ''
     # LEGO
-    output += card_extra_content_template.format('Lego&#174; Direktlink zu %(set_name)s' % data_row, 'LEGO_logo_50px.png', 'https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego&#174; Direktlink', 'CHF %(set_price)s' % data_row)
+    output += card_extra_content_template.format('Lego&#174; Direktlink zu %(set_name)s' % data_row, 'LEGO_logo_50px.png', 'https://click.linksynergy.com/deeplink?id=nwx2DOSmQDI&mid=50641&murl=https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego&#174; Direktlink', 'CHF %(set_price)s' % data_row)
     # Amazon
     output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadvisor-21&linkCode=ur2&linkId=33c68d982720ef189b223648dfcba6d7&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
     # Alternate
     if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
         output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
+
+    # Conrad
+    if pd.notna(data_row['conrad_price']) and pd.notna(data_row['conrad_slug']):
+        output += card_extra_content_template.format('Conrad Direktlink zu %(set_name)s' % data_row,  'conrad_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=11467&awinaffid=1307233&ued=https://www.conrad.ch%(conrad_slug)s' % data_row, 'Conrad Direktlink',  'CHF %(conrad_price)s' % data_row)
 
     return output
 
@@ -239,6 +248,35 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
         df.to_csv(csv_output_file, index=False)
         return df
 
+
+def getConradInfo(set_list, driver, csv_output_file = 'conrad_info.csv'):
+    df = pd.DataFrame.from_dict({'set_num': list(), 'conrad_slug': list(), 'conrad_price': list()})
+    if Path(csv_output_file).is_file():
+        df = pd.read_csv(csv_output_file)
+
+    try:
+        set_list = set(reduce(lambda x,y: x + [y.split('-')[0]], set_list, list()))
+        for set_num in set_list:
+            set_str = set_num + '-1'
+            if set_str not in df['set_num'].values:
+                print('Check set %s' % set_num)
+                driver.get(conrad_base_search_url % set_num)
+                WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//div[@class="resultsList__head"]')))
+                suggestions = driver.find_elements(By.XPATH, '//a[@class="product__title"]')
+                if len(suggestions) >= 1 and suggestions[0].text.find(set_num) > -1 and suggestions[0].text.lower().find('lego') > -1:
+                    suggest = suggestions[0]
+                    slug = urlparse(suggest.get_attribute('href')).path
+                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//button[@class="product__addToCart"]')))
+                    price = int(driver.find_elements(By.XPATH, '//p[@class="product__currentPrice"]')[0].text.replace('CHF', '').replace('.', '').strip())
+                    df = pd.concat([pd.DataFrame([[set_str, slug, price]], columns=df.columns), df])
+                else:
+                    print('Search results not unique %s' % set_num)
+                    df = pd.concat([pd.DataFrame([[set_str, None, None]], columns=df.columns), df])
+
+    finally:
+        df.to_csv(csv_output_file, index=False)
+
+
 # select
 # case when m.rebrickable_id is not null
 # then 'https://cdn.rebrickable.com/media/thumbs/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg/300x300p.jpg'
@@ -282,6 +320,7 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/thumbs/sets/'
 alternate_base_search_url = 'https://www.alternate.ch/search-suggestions.xhtml?q=lego %s'
+conrad_base_search_url = 'https://www.conrad.ch/de/search.html?search=lego %s'
 
 menu = [
     {'name': 'Brickadvisor', 'href': 'index.html', 'position': 'left', 'id': None, 'children': []},
@@ -327,6 +366,12 @@ df = df.drop_duplicates()
 df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
 df = df.merge(df_alternate, how='left', on='set_num')
 
+driver = webdriver.Chrome()
+getConradInfo(df['set_num'].drop_duplicates().to_list(), driver)
+
+df_conrad = pd.read_csv('conrad_info.csv')
+df = df.merge(df_conrad, how='left', on='set_num')
+
 df['minifig_filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['set_filename'] = df['set_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['part_price'] = df.apply(lambda x: (x['set_price'] / (100 * x['num_parts'])) if x['set_price'] and not np.isnan(x['set_price']) else None, axis=1)
@@ -338,6 +383,7 @@ df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_nam
 df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
 df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_price'] and not np.isnan(x['set_price']) else '-', axis=1)
 df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
+df['conrad_price'] = df.apply(lambda x: '%.2f' % (x['conrad_price'] / 100) if x['conrad_price'] and not np.isnan(x['conrad_price']) else '-', axis=1)
 df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
 df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
