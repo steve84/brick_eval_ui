@@ -112,7 +112,7 @@ def createCardsSnippet(title, meta_keywords, meta_description, header, paragraph
         figure_cards += '<div class="field"><label>Suche Figuren</label><div class="ui input"><input type="text" placeholder="Charakter, Set-Bezeichnung oder Set-Nummer..." id="input_search_text"></div></div>'
         figure_cards += '<div class="field"><label>Themen</label><div class="ui%s clearable multiple search selection dropdown" id="dropdown_theme"><input type="hidden" name="dropdown_theme" value="Star Wars"><i class="dropdown icon"></i><div class="default text">Wähle ein Thema aus</div></div></div></div>' % (' disabled' if len(outfile.split('/')) >= 3 and outfile.index('minifigures') > -1 else '')
         figure_cards += '<div class="equal width fields"><div class="field"><label>Status</label><div class="ui clearable multiple search selection dropdown" id="dropdown_status"><input type="hidden" name="dropdown_status"><i class="dropdown icon"></i><div class="default text">Wähle den Status aus</div></div></div>'
-        figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div><br/><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div>'
+        figure_cards += '<div class="field"><label>Weitere Eigenschaften</label><div class="equal width fields"><div class="field"><div class="ui checkbox" id="checkbox_exclusive"><input type="checkbox"><label>Nur exklusive Figuren</label></div></div><div class="field"><div class="ui checkbox" id="checkbox_first_edition"><input type="checkbox"><label>Nur Erstauflagen</label></div></div></div></div></div>'
         figure_cards += '<div class="equal width fields"><div class="field"><label>Bewertung Figur</label><div class="ui clearable selection dropdown" id="dropdown_fig_rating"><input type="hidden" name="dropdown_fig_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div><div class="field"><label>Bewertung Set</label><div class="ui clearable selection dropdown" id="dropdown_set_rating"><input type="hidden" name="dropdown_set_rating"><i class="dropdown icon"></i><div class="default text"></div></div></div></div>'
         figure_cards += '<div class="equal width fields"><div class="field"><label>Preisspanne</label><br/><div class="ui labeled ticked range slider" id="slider_price"></div></div></div>'
         figure_cards += '<div class="equal width fields"><div class="field"><label>Veröffentlichungsjahr</label><br/><div class="ui labeled ticked range slider" id="slider_year_of_publication"></div></div></div></form>'
@@ -162,7 +162,7 @@ def generateCardExtraContent(data_row):
     # LEGO
     output += card_extra_content_template.format('Lego&#174; Direktlink zu %(set_name)s' % data_row, 'LEGO_logo_50px.png', 'https://click.linksynergy.com/deeplink?id=nwx2DOSmQDI&mid=50641&murl=https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego&#174; Direktlink', 'CHF %(set_price)s' % data_row)
     # Amazon
-    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadvisor-21&linkCode=ur2&linkId=33c68d982720ef189b223648dfcba6d7&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
+    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadviso07-21&linkCode=ur2&linkId=94094fa4b7e235ab0c461abef7d3cc4a&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
     # Alternate
     if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
         output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
@@ -350,10 +350,29 @@ max_star_rating = 4
 
 star_mapping = {1: 'red', 2: 'orange', 3: 'yellow', 4: 'green'}
 eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet'}
-part_cat_mapping = {'Minifig Headwear': 'Kopfbedeckung', 'Minifig Lower Body': 'Beine', 'Minifig Upper Body': 'Torso', 'Minifig Heads': 'Kopf', 'Minifig Accessories': 'Zubehör', 'Flags, Signs, Plastics and Cloth': 'Bekleidung'}
+part_cat_mapping = {
+    'Minifig Headwear': 'Kopfbedeckung',
+    'Minifig Lower Body': 'Beine',
+    'Minifig Upper Body': 'Torso',
+    'Minifig Heads': 'Kopf',
+    'Minifig Accessories': 'Zubehör',
+    'Flags, Signs, Plastics and Cloth': 'Bekleidung',
+    'Minifigs': 'Minifigur',
+    'Tiles': 'Fliese',
+    'Panels': 'Panel',
+    'Tiles Special': 'Spezialfliese',
+    'Plants and Animals': 'Tier/Pflanze',
+    'Bricks Round and Cones': 'Rundstein/Kegel',
+    'Containers': 'Container',
+    'Tiles Round and Curved': 'Rundfliese'
+}
+
+def logNonExistingPartCat(part_cat):
+    print('Part category not found: %s' % part_cat)
+    return part_cat
 
 get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating else ''
-get_figure_part = lambda x: part_cat_mapping[x] if x in part_cat_mapping.keys() else x
+get_figure_part = lambda x: part_cat_mapping[x] if x in part_cat_mapping.keys() else logNonExistingPartCat(x)
 
 generate_unique_parts = lambda x: ', '.join(sorted([get_figure_part(y) for y in x.split(';')]))
 generate_rating = lambda prefix, x: '<div class="ui %s rating disabled"><span data-tooltip="%s%d von %d Herzen" data-variation="multiline" data-inverted="">%s</span></div>' % (get_star_color(x), prefix, x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
@@ -413,7 +432,7 @@ for index, row in df[~df['set_filename'].isna()].iterrows():
     download((rebrickable_img_url + '%s') % row['set_filename'], 'public/static/images/%s/%s.%s' % (folder, filename, row['set_filename'].split('.')[-1]))
 
 
-df = df.drop(columns=['minifig_filename', 'minifig_filename', 'theme_slug', 'minifig_score', 'set_score', 'fig_img_slug', 'fig_img_slug'])
+df = df.drop(columns=['minifig_filename', 'minifig_filename', 'theme_slug', 'minifig_score', 'fig_img_slug', 'fig_img_slug'])
 
 figure_card = ''
 with open('snippets/figure_card.html', 'r') as file:
@@ -456,7 +475,8 @@ with open(output_folder % 'static/js/main_minifigures.js', 'w', encoding='utf-8'
     tmp = tmp.replace(': nan', ': null')
     file.write(tmp)
 
-df = df.groupby(by=['root_theme_name', 'theme', 'set_rating_html', 'set_num', 'set_name', 'num_parts', 'set_year_of_publication', 'has_stickers', 'set_price', 'part_price', 'eol', 'card_extra_content', 'set_img_link']).apply(lambda x: x[['fig_name', 'minifig_img_link', 'is_exclusive', 'unique_character', 'minifig_rating_html', 'quantity', 'card_content_css', 'card_css']].to_dict('records')).reset_index().rename(columns={0: 'figures'})
+df = df.groupby(by=['root_theme_name', 'theme', 'set_rating_html', 'set_rating', 'set_score', 'set_num', 'set_name', 'num_parts', 'set_year_of_publication', 'has_stickers', 'set_price', 'part_price', 'eol', 'card_extra_content', 'set_img_link']).apply(lambda x: x[['fig_name', 'minifig_img_link', 'is_exclusive', 'unique_character', 'minifig_rating_html', 'quantity', 'card_content_css', 'card_css']].to_dict('records')).reset_index().rename(columns={0: 'figures'})
+df = df.sort_values(by=['set_score'], ascending=[False])
 with open(output_folder % 'static/js/main_sets.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')
     tmp = main_sets_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'row_template': set_row.replace('\n', ''), 'figure_cell_template': figure_cell.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', '')}
@@ -473,7 +493,7 @@ for theme in top_themes:
 
 actualYear = datetime.now().year
 
-createSnippet('Der Ratgeber für LEGO&#174; %s Minifiguren' % actualYear, '', 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
+createSnippet('Der Ratgeber für LEGO&#174; %s Minifiguren' % actualYear, 'brickadvisor,lego,figuren,wertanlage,preisvergleich,minifiguren,eol', 'Das Nachschlagewerk der besten LEGO&#174; Minifiguren. Finde Erstauflagen, Figuren mit exklusiven oder seltenen Teilen sowie bald auslaufende Exemplare (End Of Life)', 'Herzlich Willkommen bei Brickadvisor.ch', 'home', 'index.html')
 # createSnippet('Wissenswertes', '', '', 'Wissenswertes', 'wiki', 'wiki.html')
 createSnippet('Impressum', 'impressum,kelt 9,haftung,inhalte,links', 'Impressum der Webseite brickadvisor.ch', 'Impressum', 'impressum', 'impressum.html')
 createSnippet('Datenschutz', 'datenschutz,kelt 9,haftungausschluss,datenschutzgesetz,artikel 13', '', 'Datenschutz', 'privacy', 'privacy.html')
