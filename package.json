@@ -14,16 +14,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-	"mithril": "^2.2.2",
-	"fomantic-ui": "^2.8.7",
-	"gulp": "^4.0.2",
-	"gulp-clean-css": "^4.3.0",
-	"gulp-htmlmin": "^5.0.1",
-	"gulp-imagemin": "^7.1.0",
-	"gulp-uglify": "^3.0.2",
-	"gulp-replace": "^1.1.4",
+  "mithril": "^2.2.2",
+  "fomantic-ui": "^2.9.3",
+  "gulp": "^4.0.2",
+  "gulp-clean-css": "^4.3.0",
+  "gulp-htmlmin": "^5.0.1",
+  "gulp-imagemin": "^7.1.0",
+  "gulp-uglify": "^3.0.2",
+  "gulp-replace": "^1.1.4",
   "gulp-gzip": "^1.4.2",
-	"jquery": "^3.7.0"
+  "jquery": "^3.7.1"
   },
   "devDependencies": {
     "webpack": "^5.72.1",
