@@ -10,6 +10,7 @@ from datetime import datetime
 from functools import reduce
 from pathlib import Path
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -266,7 +267,7 @@ def getConradInfo(set_list, driver, csv_output_file = 'conrad_info.csv'):
                 if len(suggestions) >= 1 and suggestions[0].text.find(set_num) > -1 and suggestions[0].text.lower().find('lego') > -1:
                     suggest = suggestions[0]
                     slug = urlparse(suggest.get_attribute('href')).path
-                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//button[@class="product__addToCart"]')))
+                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//button[contains(@class, "product__addToCart")]')))
                     price = int(driver.find_elements(By.XPATH, '//p[@class="product__currentPrice"]')[0].text.replace('CHF', '').replace('.', '').strip())
                     df = pd.concat([pd.DataFrame([[set_str, slug, price]], columns=df.columns), df])
                 else:
@@ -276,46 +277,6 @@ def getConradInfo(set_list, driver, csv_output_file = 'conrad_info.csv'):
     finally:
         df.to_csv(csv_output_file, index=False)
 
-
-# select
-# case when m.rebrickable_id is not null
-# then 'https://cdn.rebrickable.com/media/thumbs/sets/' || m.fig_num || '/' || m.rebrickable_id || '.jpg/300x300p.jpg'
-# else 'https://rebrickable.com/static/img/nil_mf.jpg' end as minifig_img_link,
-# case when s.rebrickable_id is not null
-# then 'https://cdn.rebrickable.com/media/thumbs/sets/' || s.set_num || '/' || s.rebrickable_id || '.jpg/300x300p.jpg'
-# else 'https://rebrickable.com/static/img/nil_mf.jpg' end as set_img_link,
-# m.name as fig_name,
-# t.name as theme_name,
-# rt.name as root_theme_name,
-# sc.rating,
-# sc.score as minifig_score,
-# im.quantity,
-# m.has_unique_part,
-# m.unique_parts,
-# m.unique_character,
-# s.set_num,
-# s.eol,
-# s.name as set_name,
-# s.name_de as set_name_de,
-# s.lego_slug as lego_slug,
-# s.num_parts,
-# m.year_of_publication,
-# s.year_of_publication as set_year_of_publication,
-# s.has_stickers,
-# scs.rating as set_rating,
-# scs.score as set_score,
-# sp.retail_price as set_price
-# from (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) sc
-# left join inventory_minifigs im on im.id = sc.entity_id
-# left join minifigs m on m.id = im.fig_id
-# left join inventories i on i.id = im.inventory_id
-# left join sets s on s.id = i.set_id
-# left join themes t on t.id = s.theme_id
-# left join themes rt on rt.id = s.root_theme_id
-# left join (SELECT * FROM v_scores WHERE id IN (SELECT first_value(id) OVER (PARTITION BY is_set, entity_id ORDER BY calc_date DESC) from v_scores)) scs on s.id = scs.entity_id and scs.is_set = true
-# join (SELECT * FROM set_prices WHERE id IN (SELECT first_value(id) OVER (PARTITION BY set_id ORDER BY check_date DESC) from set_prices)) sp on sp.set_id = s.id
-# where sc.is_set = false and s.eol not in ('-1', '0') and s.num_parts > 0 and m.has_unique_part is not null and not m.is_minidoll and sp.retail_price is not null and i.is_latest
-# order by s.set_num, m.name;
 
 output_folder = 'public/%s'
 rebrickable_img_url = 'https://cdn.rebrickable.com/media/thumbs/sets/'
@@ -385,7 +346,9 @@ df = df.drop_duplicates()
 df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
 df = df.merge(df_alternate, how='left', on='set_num')
 
-driver = webdriver.Chrome()
+options = Options()
+options.add_argument('--headless')
+driver = webdriver.Chrome(options=options)
 getConradInfo(df['set_num'].drop_duplicates().to_list(), driver)
 
 df_conrad = pd.read_csv('conrad_info.csv')
@@ -404,7 +367,6 @@ df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_p
 df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
 df['conrad_price'] = df.apply(lambda x: '%.2f' % (x['conrad_price'] / 100) if x['conrad_price'] and not np.isnan(x['conrad_price']) else '-', axis=1)
 df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
-df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
 df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
 df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
@@ -412,10 +374,11 @@ df['card_css'] = df.apply(lambda x: generateCardCss(x['has_unique_part'], x['uni
 df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
 df['fig_img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
 df['fig_img_slug'] = df['fig_img_slug'] + '-' + df['minifig_filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
-df['set_img_slug'] = df.apply(lambda x: 'lego-%s-%s' % (x['set_num'], slugify(x['set_name'])), axis=1)
+df['set_img_slug'] = df.apply(lambda x: 'lego-%s-%s' % (x['set_num'].replace('-1', '') if x['set_num'][-2:] == '-1' else x['set_num'], slugify(x['set_name'])), axis=1)
 df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
 df['minifig_img_link'] = df.apply(lambda x: 'minifigures/%s/%s.jpg' % (x['theme_slug'], x['fig_img_slug']) if x['minifig_filename'] else 'nil_mf.jpg', axis=1)
 df['set_img_link'] = df.apply(lambda x: 'sets/%s/%s.jpg' % (x['theme_slug'], x['set_img_slug']) if x['set_filename'] else 'nil_mf.jpg', axis=1)
+df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
 
 df = df.sort_values(by=['minifig_score', 'unique_character', 'set_score'], ascending=[False, False, False])
 

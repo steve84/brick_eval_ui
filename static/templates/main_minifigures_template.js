@@ -33,7 +33,7 @@ var generateCard = obj =>  `%(figure_template)s`;
 
 var getStaticFolder = () => $('link')[0].href.split('images')[0];
 
-var isSlugActive = slug => (location.href.indexOf('minifigures') > 0 ? location.href.split('minifigures')[1].substring(1) : '').startsWith(slug.replaceAll(' ', '-').toLowerCase().trim())
+var isSlugActive = slug => (location.href.indexOf('minifigures') > 0 ? location.href.split('minifigures')[1].substring(1) : '').startsWith(slug.replaceAll(' ', '-').toLowerCase().replaceAll('minifigures', '').trim())
 
 var search_themes = Array.from(new Set(figures.map(obj => obj.root_theme_name))).find(t => this.isSlugActive(t));
 if (!search_themes) {
