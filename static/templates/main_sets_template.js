@@ -26,10 +26,10 @@ var ratings = [
 
 var search_timeout = null;
 
-var generateCard = obj =>  `%(figure_template)s`;
+var generateCard = obj => `%(figure_template)s`;
 
-var generateRow = obj =>  `%(row_template)s`;
-var generateFigureCell = obj =>  `%(figure_cell_template)s`;
+var generateRow = obj => `%(row_template)s`;
+var generateFigureCell = obj => `%(figure_cell_template)s`;
 
 var getStaticFolder = () => $('link')[0].href.split('images')[0];
 
@@ -140,7 +140,7 @@ var generateRows = () => {
     maxPriceTotal = Math.ceil(figures.map(obj => parseFloat(obj.set_price)).reduce((prev, cur) => prev >= cur ? prev : cur));
     minYearTotal = figures.map(obj => +obj.set_year_of_publication).reduce((prev, cur) => prev <= cur ? prev : cur);
     maxYearTotal = figures.map(obj => +obj.set_year_of_publication).reduce((prev, cur) => prev >= cur ? prev : cur);
-    result = figures.filter(obj => !obj || !search_states || search_states.search(obj.eol) > -1)
+    result = figures.filter(obj => !obj || !search_states || search_states.includes(obj.eol))
     result = result.filter(obj => !obj || !minSetRating || obj.set_rating >= minSetRating)
     result = result.filter(obj => !obj || !maxYear || +obj.set_year_of_publication <= maxYear)
     result = result.filter(obj => !obj || !minYear || +obj.set_year_of_publication >= minYear)
@@ -148,7 +148,7 @@ var generateRows = () => {
     result = result.filter(obj => !obj || !minPrice || parseFloat(obj.set_price) >= minPrice)
     result = result.filter(obj => !obj || search_themes.length === 0 || search_themes.search(obj.root_theme_name) > -1)
     result = result.filter(obj => !obj || !search_text || (obj.fig_name && obj.fig_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_name && obj.set_name.toLowerCase().search(search_text.toLowerCase()) > -1) || (obj.set_num && obj.set_num.toLowerCase().search(search_text.toLowerCase()) > -1))
-    result = result.map(obj => generateRow({...obj, figures: obj['figures'].map(fig => generateFigureCell(fig)).join(''), figure_count: obj['figures'].reduce((acc, curVal) => acc + curVal['quantity'], 0)}));
+    result = result.map(obj => generateRow({...obj, figures: obj['figures'].length === 1 && !obj['figures'][0]['fig_name']  ? [] : obj['figures'].map(fig => generateFigureCell(fig)).join(''), figure_count: obj['figures'].reduce((acc, curVal) => acc + curVal['quantity'], 0)}));
     totalPages = Math.ceil(result.length / pageSize);
     generatePagination();
     output = `<span>${result.length === 0 ? 0 : ((actualPage - 1) * pageSize) + 1} bis ${(actualPage * pageSize <= result.length ? actualPage * pageSize : result.length)} (Total Sets: ${result.length})`;
@@ -183,7 +183,7 @@ $(document).ready(() => {
     
     generateRows();
     themes = new Set(figures.map(obj => obj.root_theme_name));
-    states = new Set(figures.map(obj => obj.eol));
+    states = new Set(figures.map(obj => obj.eol).sort());
     $('#dropdown_theme').dropdown({
         values: Array.from(themes).map(t => {
             obj = {};
@@ -216,6 +216,7 @@ $(document).ready(() => {
         start: Math.floor(minPriceTotal / priceStepSize) * priceStepSize,
         end: Math.ceil(maxPriceTotal / priceStepSize) * priceStepSize,
         step: 10,
+        showThumbTooltip: true,
         onChange: (_, minValue, maxValue) => {
             minPrice = minValue;
             maxPrice = maxValue;
@@ -228,6 +229,7 @@ $(document).ready(() => {
         max: maxYearTotal,
         start: minYearTotal,
         end: maxYearTotal,
+        showThumbTooltip: true,
         onChange: (_, minValue, maxValue) => {
             minYear = minValue;
             maxYear = maxValue;

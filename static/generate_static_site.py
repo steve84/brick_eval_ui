@@ -4,6 +4,7 @@ import os
 import unicodedata
 import re
 import requests
+import time
 
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -159,18 +160,29 @@ def generateCardExtraContent(data_row):
     with open('snippets/card_extra_content.html', 'r') as file:
         card_extra_content_template = file.read()
 
+    data_row['set_num_short'] = data_row['set_num'].split('-')[0]
+
     output = ''
     # LEGO
     output += card_extra_content_template.format('Lego&#174; Direktlink zu %(set_name)s' % data_row, 'LEGO_logo_50px.png', 'https://click.linksynergy.com/deeplink?id=nwx2DOSmQDI&mid=50641&murl=https://www.lego.com/de-ch/product/%(lego_slug)s' % data_row, 'Lego&#174; Direktlink', 'CHF %(set_price)s' % data_row)
     # Amazon
-    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/gp/search?ie=UTF8&tag=brickadviso07-21&linkCode=ur2&linkId=94094fa4b7e235ab0c461abef7d3cc4a&camp=1638&creative=6742&index=toys&keywords=Lego %(set_num)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
+    output += card_extra_content_template.format('Amazon Suchlink zu %(set_name)s' % data_row,  'amazon_logo_50px.png', 'https://www.amazon.de/s?i=toys&linkCode=ll2&tag=brickadviso02-21&linkId=4e052f0a2b043ef436a7edc5c8aa330b&k=Lego %(set_num_short)s' % data_row, 'Amazon-Suchlink',  'Preis nicht verfügbar')
     # Alternate
-    if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
-        output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
+    # if pd.notna(data_row['alternate_price']) and pd.notna(data_row['alternate_slug']):
+    #     output += card_extra_content_template.format( 'Alternate Direktlink zu %(set_name)s' % data_row, 'alternate_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=9309&awinaffid=1307233&ued=https://www.alternate.ch%(alternate_slug)s?partner=chdezanox' % data_row, 'Alternate Direktlink', 'CHF %(alternate_price)s' % data_row)
 
     # Conrad
     if pd.notna(data_row['conrad_price']) and pd.notna(data_row['conrad_slug']):
         output += card_extra_content_template.format('Conrad Direktlink zu %(set_name)s' % data_row,  'conrad_logo_50px.png', 'https://www.awin1.com/cread.php?awinmid=11467&awinaffid=1307233&ued=https://www.conrad.ch%(conrad_slug)s' % data_row, 'Conrad Direktlink',  'CHF %(conrad_price)s' % data_row)
+
+    # Jumbo
+    if pd.notna(data_row['jumbo_price']) and pd.notna(data_row['jumbo_slug']):
+        output += card_extra_content_template.format('Jumbo Direktlink zu %(set_name)s' % data_row,  'jumbo_logo_50px.png', 'https://track.adtraction.com/t/t?a=1630631595&as=1929922936&t=2&tk=1&url=%(jumbo_slug)s' % data_row, 'Jumbo Direktlink',  'CHF %(jumbo_price)s' % data_row)
+
+    # Manor
+    if pd.notna(data_row['manor_price']) and pd.notna(data_row['manor_slug']):
+        output += card_extra_content_template.format('Manor Direktlink zu %(set_name)s' % data_row,  'manor_logo_50px.png', 'https://track.adtraction.com/t/t?a=1636471582&as=1929922936&t=2&tk=1&url=%(manor_slug)s' % data_row, 'Manor Direktlink',  'CHF %(manor_price)s' % data_row)
+
 
     return output
 
@@ -219,13 +231,13 @@ def getAlternateInfo(set_list, csv_output_file = 'alternate_info.csv'):
     else:
         output_list = {'set_num': list(), 'alternate_slug': list(), 'alternate_price': list()}
         for set in set_list:
-            resp = requests.get(alternate_base_search_url % set.split('-')[0])
+            resp = requests.get(alternate_base_search_url % set.split('-')[0],  headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0'})
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, features='lxml')
                 suggestions = soup.find_all('a', {'class': ['suggest-entry', 'mb-1']})
                 if len(suggestions) == 1:
                     suggest = suggestions[0]
-                    suggest_text = suggest.findAll('span', 'text-font')
+                    suggest_text = suggest.findAll('span', 'hightlight')
                     if len(suggest_text) != 1 or suggest_text[0].text.find(set.split('-')[0]) == -1:
                         print('Wrong search result %s' % set)
                         continue
@@ -257,17 +269,19 @@ def getConradInfo(set_list, driver, csv_output_file = 'conrad_info.csv'):
 
     try:
         set_list = set(reduce(lambda x,y: x + [y.split('-')[0]], set_list, list()))
+        driver.get('https://www.conrad.ch')
         for set_num in set_list:
             set_str = set_num + '-1'
             if set_str not in df['set_num'].values:
                 print('Check set %s' % set_num)
                 driver.get(conrad_base_search_url % set_num)
                 WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//div[@class="resultsList__head"]')))
+                time.sleep(0.5)
                 suggestions = driver.find_elements(By.XPATH, '//a[@class="product__title"]')
                 if len(suggestions) >= 1 and suggestions[0].text.find(set_num) > -1 and suggestions[0].text.lower().find('lego') > -1:
                     suggest = suggestions[0]
                     slug = urlparse(suggest.get_attribute('href')).path
-                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//button[contains(@class, "product__addToCart")]')))
+                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//p[@class="product__currentPrice"]')))
                     price = int(driver.find_elements(By.XPATH, '//p[@class="product__currentPrice"]')[0].text.replace('CHF', '').replace('.', '').strip())
                     df = pd.concat([pd.DataFrame([[set_str, slug, price]], columns=df.columns), df])
                 else:
@@ -276,6 +290,60 @@ def getConradInfo(set_list, driver, csv_output_file = 'conrad_info.csv'):
 
     finally:
         df.to_csv(csv_output_file, index=False)
+
+
+def getJumboInfo(set_list, csv_output_file = 'jumbo_info.csv'):
+    df = pd.DataFrame.from_dict({'set_num': list(), 'jumbo_slug': list(), 'jumbo_price': list()})
+    if Path(csv_output_file).is_file():
+        df = pd.read_csv(csv_output_file)
+
+    try:
+        set_list = set(reduce(lambda x,y: x + [y.split('-')[0]], set_list, list()))
+        df_base = pd.read_csv('jumbo_productfeed.csv')
+        for set_num in set_list:
+            set_str = set_num + '-1'
+            if set_str not in df['set_num'].values:
+                print('Check set %s' % set_num)
+                df_sugg = df_base[df_base['Name'].str.contains(set_num)]
+                if len(df_sugg) == 1 and df_sugg['Brand'].head().str.lower().str.contains('lego').values[0]:
+                    slug = df_sugg['ProductUrl'].values[0]
+                    price = float(df_sugg['Price'].values[0])
+                    df = pd.concat([pd.DataFrame([[set_str, slug, price]], columns=df.columns), df])
+                else:
+                    print('Search results not unique %s' % set_num)
+                    df = pd.concat([pd.DataFrame([[set_str, None, None]], columns=df.columns), df])
+
+    finally:
+        df.to_csv(csv_output_file, index=False)
+
+    return df
+
+
+def getManorInfo(set_list, csv_output_file = 'manor_info.csv'):
+    df = pd.DataFrame.from_dict({'set_num': list(), 'manor_slug': list(), 'manor_price': list()})
+    if Path(csv_output_file).is_file():
+        df = pd.read_csv(csv_output_file)
+
+    try:
+        set_list = set(reduce(lambda x,y: x + [y.split('-')[0]], set_list, list()))
+        df_base = pd.read_csv('manor_productfeed.csv')
+        for set_num in set_list:
+            set_str = set_num + '-1'
+            if set_str not in df['set_num'].values:
+                print('Check set %s' % set_num)
+                df_sugg = df_base[df_base['Name'].str.contains(set_num)]
+                if len(df_sugg) == 1 and df_sugg['Brand'].head().str.lower().str.contains('lego').values[0]:
+                    slug = df_sugg['ProductUrl'].values[0]
+                    price = float(df_sugg['Price'].values[0])
+                    df = pd.concat([pd.DataFrame([[set_str, slug, price]], columns=df.columns), df])
+                else:
+                    print('Search results not unique %s' % set_num)
+                    df = pd.concat([pd.DataFrame([[set_str, None, None]], columns=df.columns), df])
+
+    finally:
+        df.to_csv(csv_output_file, index=False)
+
+    return df
 
 
 output_folder = 'public/%s'
@@ -310,7 +378,7 @@ top_themes = [
 max_star_rating = 4
 
 star_mapping = {1: 'red', 2: 'orange', 3: 'yellow', 4: 'green'}
-eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet'}
+eol_mapping = {1: 'Verfügbar', 2: 'Einstellung in Kürze', 3: 'EOL erwartet (1. Halbjahr)', 4: 'EOL erwartet (2. Halbjahr)'}
 part_cat_mapping = {
     'Minifig Headwear': 'Kopfbedeckung',
     'Minifig Lower Body': 'Beine',
@@ -325,7 +393,20 @@ part_cat_mapping = {
     'Plants and Animals': 'Tier/Pflanze',
     'Bricks Round and Cones': 'Rundstein/Kegel',
     'Containers': 'Container',
-    'Tiles Round and Curved': 'Rundfliese'
+    'Tiles Round and Curved': 'Rundfliese',
+    'Wheels and Tyres': 'Räder und Reifen',
+    'Rock': 'Felsen',
+    'Plates Round Curved and Dishes': 'Gebogene Rundplatten und Teller',
+    'Plates': 'Platten',
+    'Bricks': 'Steine',
+    'Minifig Neckwear': 'Halsbekleidung',
+    'Minifig Hipwear': 'Hüftbekleidung',
+    'Minifig Headwear Accessories': 'Kopfbekleidung Zubehör',
+    'Bricks Sloped': 'Abgerundeter Stein',
+    'Animal / Creature Body Parts': 'Tier / Kreatur Körperteile',
+    'Tubes and Hoses': 'Rohre und Schläuche',
+    'Technic Panels': 'Technik-Panele',
+    'Minifig Shields, Weapons, & Tools': 'Schilder, Waffen und Werkzeuge für Minifigur',
 }
 
 def logNonExistingPartCat(part_cat):
@@ -335,24 +416,32 @@ def logNonExistingPartCat(part_cat):
 get_star_color = lambda x: star_mapping[x] if x > 0 and x <= max_star_rating else ''
 get_figure_part = lambda x: part_cat_mapping[x] if x in part_cat_mapping.keys() else logNonExistingPartCat(x)
 
-generate_unique_parts = lambda x: ', '.join(sorted([get_figure_part(y) for y in x.split(';')]))
+generate_unique_parts = lambda x: ', '.join(sorted(set([get_figure_part(y) for y in x.split(';')])))
 generate_rating = lambda prefix, x: '<div class="ui %s rating disabled"><span data-tooltip="%s%d von %d Herzen" data-variation="multiline" data-inverted="">%s</span></div>' % (get_star_color(x), prefix, x, max_star_rating, ''.join(['<i class="heart icon%s"></i>' % (' active' if i < x else '') for i in range(0, max_star_rating)])) if not np.isnan(x) else '-'
-generate_exclusive_icon = lambda x,y: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil (%s)" data-variation="multiline" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' % generate_unique_parts(y) if x else ''
+generate_exclusive_icon = lambda x,y: '<span class="right floated" data-tooltip="Figur besitzt mindestens ein exklusives Teil (%s)" data-variation="multiline" data-position="left center" data-inverted=""><i class="right floated orange gem icon"></i></span>' % generate_unique_parts(y) if not np.isnan(x) and x else ''
 generate_unique_icon = lambda x: '<span class="right floated" data-tooltip="Erstauflage" data-position="left center" data-variation="multiline" data-inverted=""><i class="right floated yellow medal icon"></i></span>' if x else ''
 
-df = pd.read_csv('figures.csv')
+df = pd.read_csv('data.csv')
 df = df.drop_duplicates()
 
-df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
-df = df.merge(df_alternate, how='left', on='set_num')
+# df_alternate = getAlternateInfo(df['set_num'].drop_duplicates().to_list())
+# df = df.merge(df_alternate, how='left', on='set_num')
 
-options = Options()
-options.add_argument('--headless')
-driver = webdriver.Chrome(options=options)
-getConradInfo(df['set_num'].drop_duplicates().to_list(), driver)
+# options = Options()
+# options.add_argument('--headless')
+# driver = webdriver.Chrome(options=options)
+# getConradInfo(df['set_num'].drop_duplicates().to_list(), driver)
 
 df_conrad = pd.read_csv('conrad_info.csv')
 df = df.merge(df_conrad, how='left', on='set_num')
+
+# getJumboInfo(df['set_num'].drop_duplicates().to_list())
+df_jumbo = pd.read_csv('jumbo_info.csv')
+df = df.merge(df_jumbo, how='left', on='set_num')
+
+# getManorInfo(df['set_num'].drop_duplicates().to_list())
+df_manor = pd.read_csv('manor_info.csv')
+df = df.merge(df_manor, how='left', on='set_num')
 
 df['minifig_filename'] = df['minifig_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
 df['set_filename'] = df['set_img_link'].apply(lambda x: x.replace(rebrickable_img_url, '') if x.startswith(rebrickable_img_url) else None)
@@ -364,18 +453,20 @@ df['eol'] = df.apply(lambda x: eol_mapping[x['eol']], axis=1)
 df['theme'] = df.apply(lambda x: '%s / %s' % (x['root_theme_name'], x['theme_name']) if x['theme_name'] != x['root_theme_name'] else x['theme_name'], axis=1)
 df['has_stickers'] = df.apply(lambda x: 'Ja' if x['has_stickers'] else 'Nein', axis=1)
 df['set_price'] = df.apply(lambda x: '%.2f' % (x['set_price'] / 100) if x['set_price'] and not np.isnan(x['set_price']) else '-', axis=1)
-df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
+# df['alternate_price'] = df.apply(lambda x: '%.2f' % (x['alternate_price'] / 100) if x['alternate_price'] and not np.isnan(x['alternate_price']) else '-', axis=1)
 df['conrad_price'] = df.apply(lambda x: '%.2f' % (x['conrad_price'] / 100) if x['conrad_price'] and not np.isnan(x['conrad_price']) else '-', axis=1)
+df['jumbo_price'] = df.apply(lambda x: '%.2f' % x['jumbo_price'] if not np.isnan(x['jumbo_price']) else '-', axis=1)
+df['manor_price'] = df.apply(lambda x: '%.2f' % x['manor_price'] if not np.isnan(x['manor_price']) else '-', axis=1)
 df['part_price'] = df.apply(lambda x: '%.4f' % x['part_price'] if x['set_price'] else '-', axis=1)
 df['unique_character'] = df.apply(lambda x: generate_unique_icon(x['unique_character']), axis=1)
 df['set_name'] = df.apply(lambda x: x['set_name_de'] if x['set_name_de'] else x['set_name'] , axis=1)
 df['card_extra_content'] = df.apply(lambda x: generateCardExtraContent(x) , axis=1)
 df['card_css'] = df.apply(lambda x: generateCardCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
 df['card_content_css'] = df.apply(lambda x: generateCardContentCss(x['has_unique_part'], x['unique_character'], x['rating'] == 4), axis=1)
-df['fig_img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
+df['fig_img_slug'] = df['fig_name'].apply(lambda x: 'lego-minifigure-' + re.search('^[\\w\\s]*', x).group().strip().lower().replace(' ', '-') if isinstance(x, str) else None)
 df['fig_img_slug'] = df['fig_img_slug'] + '-' + df['minifig_filename'].apply(lambda x: x.split('/')[0].replace('fig-', '') if x else x)
 df['set_img_slug'] = df.apply(lambda x: 'lego-%s-%s' % (x['set_num'].replace('-1', '') if x['set_num'][-2:] == '-1' else x['set_num'], slugify(x['set_name'])), axis=1)
-df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\w\s]*', x).group().strip().lower().replace(' ', '-'))
+df['theme_slug'] = df['root_theme_name'].apply(lambda x: re.search('^[\\w\\s]*', x).group().strip().lower().replace(' ', '-'))
 df['minifig_img_link'] = df.apply(lambda x: 'minifigures/%s/%s.jpg' % (x['theme_slug'], x['fig_img_slug']) if x['minifig_filename'] else 'nil_mf.jpg', axis=1)
 df['set_img_link'] = df.apply(lambda x: 'sets/%s/%s.jpg' % (x['theme_slug'], x['set_img_slug']) if x['set_filename'] else 'nil_mf.jpg', axis=1)
 df['set_num'] = df.apply(lambda x: x['set_num'].split('-')[0], axis=1)
@@ -431,14 +522,14 @@ with open('snippets/home.html', 'r', encoding='utf-8') as file:
 createFolder(output_folder % 'static/js')
 with open(output_folder % 'static/js/main_minifigures.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')
-    tmp = main_minifigures_js_template % {'figures': df.to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'row_template': set_row.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', '')}
+    tmp = main_minifigures_js_template % {'figures': df[df['fig_name'].apply(lambda x: isinstance(x, str))].to_dict(orient='records'), 'figure_template': figure_card.replace('\n', ''), 'row_template': set_row.replace('\n', ''), 'wiki_page': wiki_page.replace('\n', '')}
     tmp = tmp.replace('True', 'true')
     tmp = tmp.replace('False', 'false')
     tmp = tmp.replace('None', 'null')
     tmp = tmp.replace(': nan', ': null')
     file.write(tmp)
 
-df = df.groupby(by=['root_theme_name', 'theme', 'set_rating_html', 'set_rating', 'set_score', 'set_num', 'set_name', 'num_parts', 'set_year_of_publication', 'has_stickers', 'set_price', 'part_price', 'eol', 'card_extra_content', 'set_img_link']).apply(lambda x: x[['fig_name', 'minifig_img_link', 'is_exclusive', 'unique_character', 'minifig_rating_html', 'quantity', 'card_content_css', 'card_css']].to_dict('records')).reset_index().rename(columns={0: 'figures'})
+df = df.groupby(by=['root_theme_name', 'theme', 'set_rating_html', 'set_rating', 'set_score', 'set_num', 'set_name', 'num_parts', 'set_year_of_publication', 'has_stickers', 'set_price', 'part_price', 'eol', 'card_extra_content', 'set_img_link']).apply(lambda x: x[['fig_name', 'minifig_img_link', 'is_exclusive', 'unique_character', 'minifig_rating_html', 'quantity', 'card_content_css', 'card_css']].to_dict('records'), include_groups=False).reset_index().rename(columns={0: 'figures'})
 df = df.sort_values(by=['set_score'], ascending=[False])
 with open(output_folder % 'static/js/main_sets.js', 'w', encoding='utf-8') as file:
     createFolder(output_folder % 'static/js')

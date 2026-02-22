@@ -149,7 +149,7 @@ var generateCards = () => {
     maxPriceTotal = Math.ceil(figures.map(obj => parseFloat(obj.set_price)).reduce((prev, cur) => prev >= cur ? prev : cur));
     minYearTotal = figures.map(obj => +obj.year_of_publication).reduce((prev, cur) => prev <= cur ? prev : cur);
     maxYearTotal = figures.map(obj => +obj.year_of_publication).reduce((prev, cur) => prev >= cur ? prev : cur);
-    result = figures.filter(obj => !obj || !search_states || search_states.search(obj.eol) > -1)
+    result = figures.filter(obj => !obj || !search_states || search_states.includes(obj.eol))
     result = result.filter(obj => !obj || !minFigRating || obj.rating >= minFigRating)
     result = result.filter(obj => !obj || !minSetRating || obj.set_rating >= minSetRating)
     result = result.filter(obj => !obj || !maxYear || +obj.year_of_publication <= maxYear)
@@ -193,7 +193,7 @@ $(document).ready(() => {
     }
     generateCards();
     themes = new Set(figures.map(obj => obj.root_theme_name));
-    states = new Set(figures.map(obj => obj.eol));
+    states = new Set(figures.map(obj => obj.eol).sort());
     $('#checkbox_exclusive').checkbox({
         onChecked: function() {
             actualPage = 1;
@@ -259,6 +259,7 @@ $(document).ready(() => {
         start: Math.floor(minPriceTotal / priceStepSize) * priceStepSize,
         end: Math.ceil(maxPriceTotal / priceStepSize) * priceStepSize,
         step: 10,
+        showThumbTooltip: true,
         onChange: (_, minValue, maxValue) => {
             minPrice = minValue;
             maxPrice = maxValue;
@@ -271,6 +272,14 @@ $(document).ready(() => {
         max: maxYearTotal,
         start: minYearTotal,
         end: maxYearTotal,
+        showThumbTooltip: true,
+        interpretLabel: value => Array.apply(null, {length: maxYearTotal + 1 - minYearTotal}).map((_, idx) => {
+            if (idx === 0 || idx === (maxYearTotal - minYearTotal) || Math.floor((maxYearTotal - minYearTotal) / 2) === idx) {
+                return idx + minYearTotal;
+            } else {
+                return ' ';
+            }
+        })[value],
         onChange: (_, minValue, maxValue) => {
             minYear = minValue;
             maxYear = maxValue;

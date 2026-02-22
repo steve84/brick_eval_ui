@@ -131,7 +131,8 @@ var SetSearchForm =  {
                     m("option", {"value": 0}, "Altes Produkt"),
                     m("option", {"value": 1}, "Verfügbar"),
                     m("option", {"value": 2}, "Einstellung in Kürze"),
-                    m("option", {"value": 3}, "EOL erwartet"),
+                    m("option", {"value": 3}, "EOL erwartet 1"),
+                    m("option", {"value": 4}, "EOL erwartet 2"),
                 ])
             ]),
             m("div", {class: "field"}, [

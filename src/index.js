@@ -17,8 +17,9 @@ var appState = {
 var q = [
     {
         "or": [
-            {"name": "set_num", "op": "ilike", "val": "{set_search}%25"},
-            {"name": "name", "op": "ilike", "val": "%25{set_search}%25"}
+            {"name": "set_num", "op": "ilike", "val": "{query}%25"},
+            {"name": "name", "op": "ilike", "val": "%25{query}%25"},
+            {"name": "name_de", "op": "ilike", "val": "%25{query}%25"}
         ]
     }
 ]
@@ -66,7 +67,6 @@ $('#set_search').search(
             method: "GET",
             headers: {"Accept": "application/vnd.api+json"},
             onResponse: resp => resp.data.map(a => {return {"title": a.attributes.set_num, "description": a.attributes.name, "id": a.id}}),
-            beforeSend: settings => settings.urlData = {"set_search": $('#set_search input').val()},
         },
         onSelect: (res) => {
             m.route.set('set/:id', {"id": res.id})

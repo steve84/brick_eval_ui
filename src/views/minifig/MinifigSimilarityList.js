@@ -2,7 +2,7 @@ var m = require("mithril")
 var MinifigSimilarity = require("../../models/minifig/MinifigSimilarity")
 
 var Table = require("../common/Table")
-var MinifigSimilaritySearchForm = require("./MinifigSimilaritySearchForm")
+//var MinifigSimilaritySearchForm = require("./MinifigSimilaritySearchForm")
 
 var MinifigSimilarityList =  {
     oninit: (vnode) => {
@@ -48,7 +48,7 @@ var MinifigSimilarityList =  {
         MinifigSimilarity.getMinfigSimilarities()
     },
     view: (vnode) => [
-        m(MinifigSimilaritySearchForm),
+        //m(MinifigSimilaritySearchForm),
         m(Table, {
             "pageable": true,
             "searchable": true,
